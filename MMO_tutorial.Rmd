@@ -1,0 +1,510 @@
+---
+title: "MMO Tutorial"
+author:
+  - name: "Irene B. R. Smith"
+    url: "http://www.example.com"
+    affiliations:
+      - McGill University
+date: 2025-9-1
+bibliography: bibliography.bib
+format: 
+  html: default
+  pdf: default
+editor: visual
+knitr: 
+  opts_chunk: 
+    message: false
+---
+
+## Packages
+
+```{r, results=FALSE, echo=FALSE}
+# renv::use(lockfile = "renv.lock")
+```
+
+`brms` [@burkner_advanced_2018] is used to fit the Bayesian model. It uses `RStan` [@stan_rstan], which needs to be manually installed. Instructions for installing `RStan` can be found here: <https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started>. Once `RStan` is installed, `brms` can simply be installed using `install.packages("brms")` (more information here: <https://paul-buerkner.github.io/brms/>). 
+
+```{r, results=FALSE}
+library(brms)
+```
+
+`tidybayes` [@kay_tidybayes_2020] is used to get model predictions and to summarize model predictions. 
+
+```{r, results=FALSE}
+library(tidybayes)
+```
+
+`adehabitatHR`[@calenge_the_2006] the package used to compute Bhattacharyya affinity. The code below is adapted from Joey Stanley's tutorial: <https://joeystanley.com/blog/a-tutorial-in-calculating-vowel-overlap/>. 
+
+```{r, results=FALSE}
+library(adehabitatHR)
+```
+
+Finally, we use `tityverse` for `ggplot2` and `dplyr` functionality.
+
+```{r, results=FALSE}
+library(tidyverse)
+```
+We use the `patchwork` library to help arrange `ggplot2` plots. 
+```{r}
+library(patchwork)
+```
+
+
+```{r, results=FALSE, warning=FALSE, echo=FALSE}
+# The following packages are from the ling methods hub template, I'm not exactly sure what they do.
+library(showtext)
+library(khroma)
+font_add_google("Atkinson Hyperlegible", "atkinson")
+showtext_auto()
+```
+
+## Data processing
+
+We'll be using the Raleigh corpus [@dodsworth_language_2020] from the SPADE project [@sonderegger_managing_2022], available on OSF: <https://osf.io/79jgu>. 
+```{r}
+raleigh_data_full <- read.csv("data/spade-Raleigh_formants_whitelisted.csv")
+```
+
+To make this tutorial run-able on a personal laptop, we'll just use the ten speakers who have the most data. 
+
+```{r}
+# make a vector containing the names of the 10 speakers with the most data
+top_10_speakers <- raleigh_data_full %>%
+  count(speaker) %>% # the number of tokens per speaker 
+  mutate(rank=dense_rank(desc(n))) %>% # rank number of tokens with most=1
+  filter(rank <= 10) %>% # filter out everyone except the top 10 speakers
+  pull(speaker) # convert speaker column to a vector
+
+# filter the original dataset to only include top 10 speakers 
+raleigh_data_top10 <- raleigh_data_full %>%
+  filter(speaker %in% top_10_speakers) 
+```
+
+Before narrowing down to the two vowels of interest (/IH/ and /EH/), we want to Lobanov normalize using all vowel tokens [@lobanov_classification_1971], i.e., take a z-score of F1 and F2 across all vowel tokens.
+
+```{r}
+raleigh_data_norm <- raleigh_data_top10 %>%
+  group_by(speaker) %>% # vowels are normalized separately for each speaker
+  mutate(across(c(F1, F2), ~ (.x - mean(.x, na.rm = TRUE)) / sd(.x)))
+```
+
+Check to see that the vowels are reasonably z-scored
+
+```{r}
+raleigh_data_norm %>%
+  ggplot(aes(x=F2, y=F1, color=phone_label)) +
+  geom_point(alpha=0.25, show.legend=FALSE) +
+  facet_wrap(~speaker) +
+  scale_x_reverse() + scale_y_reverse() +
+  # scale_color_bright() +
+  theme_minimal() +
+  theme(text = element_text(family = "atkinson"))
+```
+
+Now, let's narrow down the dataset to the tokens and quantities we're interested in. We want stressed tokens of /IH/ and /EH/. 
+
+```{r}
+raleigh_data <- raleigh_data_norm %>%
+  # pick out just syllables with primary stress
+  filter(syllable_stress==1) %>%
+  # grab the /IH/ and /EH/ tokens.
+  # match the unisyn label to the phone label for a quality check
+  filter((phone_label=="EH1" & UnisynPrimStressedVowel1=="e") | 
+           (phone_label=="IH1" & UnisynPrimStressedVowel1=="i")) %>%
+  # make sure that UR in this dialect corresponds to lexical set 
+  # (more important when there is more than one dialect)
+  filter(unisynPrimStressedVowel2_sca==UnisynPrimStressedVowel1) %>%
+  # label the context according to following consonant
+  mutate(context = case_when(
+    following_phone %in% c("B", "CH", "D", "DH", "F", "G", "HH", "JH", "K",
+                           "L", "P", "R", "S", "SH", "T", "TH", "V", "W",
+                           "Y", "Z", "ZH" ) ~ "oral", # oral consonants
+    following_phone %in% c("N", "M", "NG") ~ "nasal", # nasal consonants
+    TRUE ~ "other")) %>% 
+  # get rid of everything that isn't an oral or nasal consonant
+  filter(context != "other") %>% 
+  # get rid of voiced prevalar contexts (can include, but would want 
+  # following consonant included in model as a predictor or random effect)
+  filter(following_phone!="NG", following_phone!="G") %>%
+  # make vowel and context factors and make sure that there aren't 
+  # extraneous levels
+  mutate(vowel = as.factor(UnisynPrimStressedVowel1),
+         context = as.factor(context)) %>%
+  droplevels() %>%
+  # keep just the columns we're interested in
+  dplyr::select(speaker, sex, birthyear, vowel, context, word, 
+                F1, F2, duration) %>%
+  # log transform and center duration
+  mutate(log_duration=log(duration)) %>%
+  mutate(z_log_duration=(log_duration-mean(log_duration))/sd(log_duration))
+```
+
+Check to see that log duration is roughly normally distributed
+
+```{r}
+raleigh_data %>%
+  ggplot(aes(x=z_log_duration)) +
+  geom_density() +
+  # scale_color_bright() +
+  theme_minimal() +
+  theme(text = element_text(family = "atkinson"))
+```
+Not really, but it's still much better than the raw durations: 
+
+```{r}
+raleigh_data %>%
+  ggplot(aes(x=duration)) +
+  geom_density() +
+  # scale_color_bright() +
+  theme_minimal() +
+  theme(text = element_text(family = "atkinson"))
+```
+There is currently too much data to fit the model on my computer, so want to randomly pick 50 tokens of each vowel x context for each speaker
+```{r}
+raleigh_data_50 <- raleigh_data %>%
+  group_by(speaker, context, vowel) %>% 
+  slice_sample(n=50) %>%
+  ungroup()
+```
+
+
+## Exploratory plots
+
+Let's make some exploratory plots to set up our expectations. 
+
+First, let's just start with looking at the phone x context distributions for each speaker. 
+
+```{r}
+raleigh_data %>%
+  ggplot(aes(x=F2, y=F1, color=vowel)) +
+  # geom_point(alpha=0.1, aes(shape=context)) +
+  stat_ellipse(level=0.66, aes(lty=context)) +
+  facet_wrap(~speaker)
+```
+Let's look at each speaker's category center on the same graph
+
+```{r}
+raleigh_data %>%
+  group_by(speaker, vowel, context) %>% 
+  summarize(across(c(F1, F2), mean)) %>%
+  ungroup() %>%
+  ggplot(aes(x=F2, y=F1, color=vowel, shape=context)) +
+  geom_point() +
+  geom_line(aes(group=interaction(vowel, speaker))) +
+  scale_x_reverse() + scale_y_reverse()
+```
+
+
+The average (across speakers) effect of context on vowel for both F1 and F2.
+
+```{r}
+raleigh_data %>%
+  # give all speakers equal weight
+  group_by(speaker, vowel, context) %>% 
+  summarize(F1=mean(F1)) %>%
+  ungroup() %>%
+  # now average all speakers together
+  group_by(vowel, context) %>%
+  summarize(F1=mean(F1)) %>%
+  ungroup() %>%
+  ggplot(aes(x=context, y=F1, color=vowel)) +
+  geom_point() +
+  geom_line(aes(group=vowel))
+```
+Now make the same plot but with each individual speaker's interactions
+
+```{r}
+raleigh_data %>%
+  group_by(speaker, vowel, context) %>% 
+  summarize(F1=mean(F1)) %>%
+  ungroup() %>%
+  ggplot(aes(x=context, y=F1, color=vowel)) +
+  geom_point() +
+  geom_line(aes(group=interaction(vowel, speaker)))
+```
+
+## Model fitting
+
+We are going to fit a simple multivariate Bayesian model (similar to the "minimal" model in our Interspeech paper [@smith_modelled_2024]). For more model syntax examples (including more complex concepts, such as nested random effects and modelling variance), see the model-fitting scripts in the Interspeech folder of the github repository. 
+
+The model we are fitting jointly models F1 and F2, which is a key feature of the method we're proposing. The remainder of the model structure is quite simple. The fixed predictors are context, vowel, log duration, and all interactions. There are by-word and by-speaker random intercepts, and by-speaker random slopes of of vowel, context, and their interaction. 
+```{r}
+F1 = bf(F1 ~ 
+          context*vowel +
+          (1|p|word) + (1+context*vowel|q|speaker))
+
+F2 = bf(F2 ~ 
+          context*vowel +
+          (1|p|word) + (1+context*vowel|q|speaker))
+
+model <- brm(F1 + F2 + 
+               # set_rescor(TRUE) means that correlations between F1 & F2 
+               # will be modelled.
+               set_rescor(TRUE),
+             # we want to use the smaller dataset so it doesn't take 
+             # forever to fit
+             data=raleigh_data_50, 
+             # if this file exists, this call will just read in the file. 
+             # Otherwise, the call will save the model here. 
+             file="tutorial_model.rmd",
+             # Set prior for correlations. All other parameters just use 
+             # default priors. 
+             prior = c(prior(lkj(1.5), class = cor)), 
+             # my computer has 8 cores, so I'm using 4 here, change 
+             # according to your own machine. Ideally, you want to use the 
+             # same number of cores as chains, so that all the chains can 
+             # run in parallel.
+             chains=4, cores=4, 
+             # If there are warnings, consider increasing the number of
+             # iterations.
+             iter = 4000)
+
+```
+```{r}
+prior_summary(model)
+```
+
+To make predictions, we need to know what parameter values to predict for. If we want to make predictions for an "average speaker," we want to ignore the random effects structure entirely, i.e., predict F1 and F2 as a function of just vowel and context. 
+
+Let's make a dataframe with every combination of vowel and context: 
+```{r}
+nd1 <- expand_grid(context = levels(model$data$context),
+                   vowel = levels(model$data$vowel))
+```
+
+If we want to make 
+```{r}
+nd2 <- expand_grid(context = levels(model$data$context), 
+                   vowel = levels(model$data$vowel),
+                   speaker = unique(model$data$speaker))
+num_draws=100
+num_points=25
+```
+
+
+```{r}
+fitted_sp_int <- nd2 %>% 
+  add_epred_draws(model, 
+                  re_formula = ~(1+context*vowel| 
+                                   q|speaker),
+                  ndraws=num_draws) %>%
+  ungroup() %>%
+  pivot_wider(names_from=".category", values_from=".epred")
+```
+
+We also want to make predictions for the *average* speaker, i.e., from the model but ignoring the entire random effects structure: 
+
+```{r}
+fitted_av_int <- nd1 %>% 
+  add_epred_draws(model, 
+                  re_formula=NA, # needs to be NA (which keeps it empty), rather than NULL, which is the "default," i.e., complete random effects structure
+                  ndraws=num_draws) %>%
+  ungroup() %>%
+  pivot_wider(names_from=".category", values_from=".epred")
+```
+
+```{r}
+predicted_sp_int <- nd2 %>% 
+  add_predicted_draws(model, 
+                      re_formula = ~(1+context*vowel| 
+                                       q|speaker),
+                      ndraws=num_draws) %>%
+  ungroup() %>%
+  pivot_wider(names_from=".category", values_from=".prediction")
+```
+
+```{r}
+predicted_av_int <- nd1 %>% 
+  add_predicted_draws(model, 
+                      re_formula=NA,
+                      ndraws=num_draws) %>%
+  ungroup() %>%
+  pivot_wider(names_from=".category", values_from=".prediction")
+```
+
+We need to make special dataframes for the BA calculations because we want to be able to calculate uncertainty. First, let's define a function for repeating a dataframe `df` `n_rep` times. We don't need to do this, but it makes the code for getting the predicted dataframes cleaner.
+
+```{r}
+rep_df <- function(df, n_reps)
+{
+  df_repeated <- do.call("rbind", replicate(n_reps, df, simplify = FALSE))
+}
+```
+
+Because we only need these special repeated dataframes to calculate BA (which requires a distribution to compute), we just need to generate posterior predictions, not the fitted means. What we're doing here is getting `n_draws` (i.e., 25) predictions *for each draw*, i.e, we assume a fixed set of parameter values and then get 25 values from the posterior predicted distribution assuming those values. We do this `n_draws` times, which which in the end will give us a *distribution* of possible BA values. 
+
+```{r}
+predicted_sp_BA <- nd2 %>% 
+  rep_df(num_points) %>%
+  add_predicted_draws(model, 
+                      re_formula = ~(1+context*vowel| 
+                                       q|speaker),
+                      ndraws=num_draws) %>%
+  ungroup() %>%
+  pivot_wider(names_from=".category", values_from=".prediction")
+```
+
+```{r}
+predicted_av_BA <- nd1 %>% 
+  rep_df(num_points) %>%
+  add_predicted_draws(model, 
+                      re_formula=NA,
+                      ndraws=num_draws) %>%
+  ungroup() %>%
+  pivot_wider(names_from=".category", values_from=".prediction")
+```
+
+
+```{r}
+sp_estimates <- fitted_sp_int %>%
+  group_by(speaker, vowel, context) %>%
+  mean_qi() %>% 
+  ungroup()
+```
+
+```{r}
+sp_estimates %>%
+  ggplot(aes(x=context, y=F1, color=vowel)) +
+  geom_point() +
+  geom_line(aes(group=interaction(vowel, speaker)))
+
+raleigh_data %>%
+  group_by(speaker, vowel, context) %>% 
+  summarize(F1=mean(F1)) %>%
+  ungroup() %>%
+  ggplot(aes(x=context, y=F1, color=vowel)) +
+  geom_point() +
+  geom_line(aes(group=interaction(vowel, speaker)))
+```
+
+
+```{r}
+sp_estimates %>%
+  ggplot(aes(x=context, y=F2, color=vowel)) +
+  geom_point() +
+  geom_line(aes(group=interaction(vowel, speaker)))
+
+raleigh_data %>%
+  group_by(speaker, vowel, context) %>% 
+  summarize(F2=mean(F2)) %>%
+  ungroup() %>%
+  ggplot(aes(x=context, y=F2, color=vowel)) +
+  geom_point() +
+  geom_line(aes(group=interaction(vowel, speaker)))
+```
+
+```{r}
+sp_estimates %>%
+  ggplot(aes(x=F2, y=F1, color=vowel, shape=context)) +
+  geom_point() +
+  stat_ellipse(data=fitted_sp_int, 
+               aes(group=interaction(speaker, vowel, context), lty=context),
+               level=0.66, alpha=0.25) +
+  geom_line(aes(group=interaction(vowel, speaker))) +
+  scale_x_reverse() + scale_y_reverse()
+
+raleigh_data %>%
+  group_by(speaker, vowel, context) %>% 
+  summarize(across(c(F1, F2), mean)) %>%
+  ungroup() %>%
+  ggplot(aes(x=F2, y=F1, color=vowel, shape=context)) +
+  geom_point() +
+  geom_line(aes(group=interaction(vowel, speaker))) +
+  scale_x_reverse() + scale_y_reverse()
+```
+
+
+
+```{r}
+predicted_sp_int %>%
+  ggplot(aes(x=F2, y=F1, color=vowel, lty=context)) +
+  stat_ellipse(level=0.66) +
+  stat_ellipse(data=raleigh_data, level=0.66, alpha=0.25) +
+  facet_wrap(~speaker)
+```
+
+## Overlap calculations
+Now that we have predicted and fitted dataframes that "look like" the raw data, we can calculate any measure of overlap we like. 
+
+Let's define a function to calculate Bhattacharyya affinity. For further explanation, see Joey Stanly's thorough tutorial. 
+
+```{r}
+bhatt <- function (F1, F2, vowel) 
+{
+  vowel_data <- droplevels(data.frame(vowel))
+  
+  sp_df <- tryCatch(
+    expr=SpatialPointsDataFrame(na.omit(cbind(F1, F2)), vowel_data), 
+    error=function(e){NA})
+  tryCatch(
+    expr = {kerneloverlap(sp_df, method='BA')[1,2]}, 
+    error = function(e){NA})
+}
+```
+
+First, let's calculate BA from the empirical distributions: 
+```{r}
+BA_raw_sp <- raleigh_data %>%
+  group_by(speaker, context) %>% # calcualte for each speaker and context
+  summarise(bhatt_aff = bhatt(F1, F2, vowel)) %>%
+  ungroup()
+```
+
+```{r}
+BA_mod_sp <- predicted_sp_BA %>%
+  group_by(speaker, context, .draw) %>% # calculate for each speaker, context, AND draw
+  summarise(bhatt_aff = bhatt(F1, F2, vowel)) %>%
+  ungroup()
+```
+```{r}
+BA_mod_av <- predicted_av_BA %>%
+  group_by(context, .draw) %>% # calculate for each context draw
+  summarise(bhatt_aff = bhatt(F1, F2, vowel)) %>%
+  ungroup()
+```
+
+For calculating Euclidean distance, we need to take a slightly different approach for the empirical distributions than for the modelled distributions. Let's do the empirical distributions first:
+
+```{r}
+ED_raw_sp <- raleigh_data %>%
+  group_by(speaker, context, vowel) %>%
+  # first, find the average for speaker, context, vowel pair
+  summarise(F1=mean(F1),
+            F2=mean(F2)) %>%
+  ungroup() %>%
+  # reshape the dataframe so that "i" and "e" are in separate columns
+  pivot_wider(names_from="vowel", values_from=c("F1", "F2")) %>%
+  # now apply the pythagorean theorem, which defines Euclidean distance
+  mutate(eucl_dist = sqrt((F1_i - F1_e)^2 + (F2_i - F2_e)^2))
+```
+```{r}
+ED_mod_sp <- fitted_sp_int %>%
+  dplyr::select(-.row, -.chain, -.iteration) %>%
+  # reshape the dataframe so that "i" and "e" are in separate columns
+  pivot_wider(names_from="vowel", values_from=c("F1", "F2")) %>%
+  # now apply the pythagorean theorem, which defines Euclidean distance
+  mutate(eucl_dist = sqrt((F1_i - F1_e)^2 + (F2_i - F2_e)^2))
+```
+
+```{r}
+ED_mod_av <- fitted_av_int %>%
+  dplyr::select(-.row, -.chain, -.iteration) %>%
+  # reshape the dataframe so that "i" and "e" are in separate columns
+  pivot_wider(names_from="vowel", values_from=c("F1", "F2")) %>%
+  # now apply the pythagorean theorem, which defines Euclidean distance
+  mutate(eucl_dist = sqrt((F1_i - F1_e)^2 + (F2_i - F2_e)^2))
+```
+
+
+
+
+
+```{r, echo=FALSE}
+# palmerpenguins::penguins %>%
+#   ggplot(aes(flipper_length_mm, body_mass_g, color = species))+
+#     geom_point()+
+#     scale_color_bright()+
+#     theme_minimal()+
+#     theme(text = element_text(family = "atkinson"))
+```

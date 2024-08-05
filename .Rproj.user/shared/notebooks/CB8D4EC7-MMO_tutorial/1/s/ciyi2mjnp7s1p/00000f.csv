@@ -1,0 +1,9 @@
+"0","# The following packages are from the ling methods hub template, I'm not exactly sure what they do."
+"0","library(showtext)"
+"2","Loading required package: sysfonts
+"
+"2","Loading required package: showtextdb
+"
+"0","library(khroma)"
+"0","font_add_google(""Atkinson Hyperlegible"", ""atkinson"")"
+"0","showtext_auto()"

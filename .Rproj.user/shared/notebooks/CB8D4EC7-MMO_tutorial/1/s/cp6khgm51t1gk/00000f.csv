@@ -1,0 +1,11 @@
+"0","library(showtext)"
+"2","Warning: package ‘showtext’ was built under R version 4.2.3"
+"2","Loading required package: sysfonts
+"
+"2","Warning: package ‘sysfonts’ was built under R version 4.2.3"
+"2","Loading required package: showtextdb
+"
+"2","Warning: package ‘showtextdb’ was built under R version 4.2.3"
+"0","library(khroma)"
+"0","font_add_google(""Atkinson Hyperlegible"", ""atkinson"")"
+"0","showtext_auto()"

@@ -1,0 +1,8 @@
+"0","palmerpenguins::penguins %>%"
+"0","  ggplot(aes(flipper_length_mm, body_mass_g, color = species))+"
+"0","    geom_point()+"
+"0","    scale_color_bright()+"
+"0","    theme_minimal()+"
+"0","    theme(text = element_text(family = ""atkinson""))"
+"2","Error in list2(...) : argument ""scale_name"" is missing, with no default
+"

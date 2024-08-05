@@ -1,0 +1,20 @@
+"0","library(brms)"
+"2","Loading required package: Rcpp
+"
+"2","Registered S3 method overwritten by 'htmlwidgets':
+  method           from         
+  print.htmlwidget tools:rstudio
+"
+"2","Loading 'brms' package (version 2.18.0). Useful instructions
+can be found by typing help('brms'). A more detailed introduction
+to the package is available through vignette('brms_overview').
+"
+"2","
+Attaching package: ‘brms’
+
+"
+"2","The following object is masked from ‘package:stats’:
+
+    ar
+
+"

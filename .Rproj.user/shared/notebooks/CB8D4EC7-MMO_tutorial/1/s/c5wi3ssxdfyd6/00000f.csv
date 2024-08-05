@@ -1,0 +1,6 @@
+"0","predicted_av_int <- nd1 %>% "
+"0","  add_predicted_draws(model, "
+"0","                      re_formula=NA,"
+"0","                      ndraws=num_draws) %>%"
+"0","  ungroup() %>%"
+"0","  pivot_wider(names_from="".category"", values_from="".prediction"")"
