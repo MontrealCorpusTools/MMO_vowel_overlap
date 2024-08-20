@@ -1,6 +1,0 @@
-"0","BA_raw_sp <- raleigh_data %>%
-  group_by(speaker, context) %>%
-  summarise(bhatt_aff = bhatt(F1, F2, vowel)) %>%
-  ungroup()
-"
-"2","`summarise()` has grouped output by 'speaker'. You can override using the `.groups` argument."

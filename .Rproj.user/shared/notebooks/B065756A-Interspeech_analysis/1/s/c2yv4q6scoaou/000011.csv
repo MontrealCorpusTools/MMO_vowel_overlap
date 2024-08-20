@@ -1,0 +1,11 @@
+"0","data_ave <- data_raw %>%
+  group_by(corpus, speaker, word) %>%
+  summarise(zF1=mean(zF1),
+            zF2=mean(zF2),
+            context=first(context),
+            stressed_vowel=first(stressed_vowel)) %>%
+  ungroup() %>%
+  mutate(model_type=""empirical"",
+         model_structure=""averaged"")
+"
+"2","`summarise()` has grouped output by 'corpus', 'speaker'. You can override using the `.groups` argument."

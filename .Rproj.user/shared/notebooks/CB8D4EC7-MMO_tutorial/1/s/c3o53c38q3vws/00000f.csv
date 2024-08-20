@@ -1,0 +1,6 @@
+"0","fitted_av_int <- nd1 %>% "
+"0","  add_epred_draws(model, "
+"0","                  re_formula=NA, # needs to be NA (which keeps it empty), rather than NULL, which is the ""default,"" i.e., complete random effects structure"
+"0","                  ndraws=num_draws) %>%"
+"0","  ungroup() %>%"
+"0","  pivot_wider(names_from="".category"", values_from="".epred"")"

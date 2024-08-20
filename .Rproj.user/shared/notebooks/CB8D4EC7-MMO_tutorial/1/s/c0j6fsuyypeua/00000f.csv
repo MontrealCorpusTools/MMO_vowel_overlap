@@ -1,0 +1,16 @@
+"0","library(patchwork)"
+"2","
+Attaching package: ‘patchwork’
+
+"
+"2","The following object is masked from ‘package:MASS’:
+
+    area
+
+"
+"0","# library(showtext)"
+"0","library(khroma)"
+"0",""
+"0","# # these commands affect the appearance of plots"
+"0","# font_add_google(""Atkinson Hyperlegible"", ""atkinson"")"
+"0","# showtext_auto()"

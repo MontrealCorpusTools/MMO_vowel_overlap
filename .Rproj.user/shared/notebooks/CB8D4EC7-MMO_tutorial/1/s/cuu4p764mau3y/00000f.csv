@@ -1,6 +1,0 @@
-"0","BA_mod_av <- predicted_av_BA %>%
-  group_by(context, .draw) %>% # calculate for each context draw
-  summarise(bhatt_aff = bhatt(F1, F2, vowel)) %>%
-  ungroup()
-"
-"2","`summarise()` has grouped output by 'context'. You can override using the `.groups` argument."

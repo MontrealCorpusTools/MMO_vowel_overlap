@@ -1,6 +1,0 @@
-"0","BA_mod_sp <- predicted_sp_BA %>%
-  group_by(speaker, context, .draw) %>% # calcualte for each speaker, context, AND draw
-  summarise(bhatt_aff = bhatt(F1, F2, vowel)) %>%
-  ungroup()
-"
-"2","`summarise()` has grouped output by 'speaker', 'context'. You can override using the `.groups` argument."

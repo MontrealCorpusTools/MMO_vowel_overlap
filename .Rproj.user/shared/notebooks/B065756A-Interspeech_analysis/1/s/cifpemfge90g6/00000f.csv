@@ -1,0 +1,25 @@
+"0","av_data %>%
+  filter(model_structure!=""averaged"", model_type!=""univariate"") %>%
+  ggplot(aes(x=zF2, y=zF1)) +
+  # geom_point(alpha=0.001, aes(color=context)) +
+  stat_ellipse(size=0.3, level=0.1, aes(color=context, lty=stressed_vowel)) +
+  # geom_point(alpha=0.5, aes(color=context)) +
+  facet_grid(model_structure~corpus) +
+  scale_x_reverse() + scale_y_reverse() +
+  scale_color_manual(values=colors) +
+  coord_fixed() +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=90, hjust=1, vjust=0.5, size=6),
+        axis.text.y=element_text(size=6),
+        # axis.title.x=element_text(margin=margin(t=0, b=0)),
+        legend.position=""bottom"", legend.title=element_blank(),
+        legend.text=element_text(size=8),
+        legend.margin=margin(t=0, r=0, b=0, l=0, unit=""pt""),
+        legend.box.margin=margin(t=0, r=0, b=0, l=0, unit=""pt""),
+        # strip.clip=""off"",
+        plot.margin=margin(t=0, r=0, b=0, l=0, unit=""pt""),
+        panel.spacing=unit(0.75, ""mm""),
+        strip.text=element_text(size=8), axis.title=element_text(size=8))
+"
+"2","Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
+Please use `linewidth` instead."

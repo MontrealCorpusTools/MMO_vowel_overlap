@@ -1,0 +1,26 @@
+"0","BA_sp %>%
+  group_by(speaker, model, context, corpus) %>%
+  summarise(bhatt_aff = mean(bhatt_aff)) %>%
+  pivot_wider(names_from=""context"", values_from=""bhatt_aff"") %>%
+  ggplot(aes(x=oral, y=nasal)) +
+  geom_point(size=1, alpha=0.25) + 
+  facet_grid(model~corpus) + 
+  geom_abline(size=0.3, lty=3) +
+  xlab(""preoral Bhattacharyya affinity"") +
+  ylab(""prenasal Bhattacharyya affinity"") +
+  xlim(0,1) + ylim(0,1) + 
+  coord_fixed() +
+  theme_bw(base_size=10) +
+  theme(axis.text.x=element_text(angle=90, hjust=1, vjust=0.5, size=6),
+        axis.text.y=element_text(size=6),
+        # axis.title.x=element_text(margin=margin(t=0, b=0)),
+        legend.position=""top"", legend.title=element_blank(),
+        legend.text=element_text(size=8),
+        legend.margin=margin(t=0, r=0, b=0, l=0, unit=""pt""),
+        legend.box.margin=margin(t=0, r=0, b=0, l=0, unit=""pt""),
+        # strip.clip=""off"",
+        plot.margin=margin(t=0, r=0, b=0, l=0, unit=""pt""),
+        panel.spacing=unit(0.75, ""mm""),
+        strip.text=element_text(size=8), axis.title=element_text(size=8))
+"
+"2","`summarise()` has grouped output by 'speaker', 'model', 'context'. You can override using the `.groups` argument."

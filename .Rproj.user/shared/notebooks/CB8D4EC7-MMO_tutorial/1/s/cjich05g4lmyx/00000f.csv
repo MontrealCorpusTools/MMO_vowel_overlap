@@ -1,0 +1,4 @@
+"0","sp_estimates <- fitted_sp_int %>%"
+"0","  group_by(speaker, vowel, context) %>%"
+"0","  mean_qi() %>% "
+"0","  ungroup()"

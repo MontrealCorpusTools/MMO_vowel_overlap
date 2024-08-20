@@ -1,0 +1,7 @@
+"0","fitted_sp_int <- nd2 %>% "
+"0","  add_epred_draws(model, "
+"0","                  re_formula = ~(1+context*vowel| "
+"0","                                   q|speaker),"
+"0","                  ndraws=num_draws) %>%"
+"0","  ungroup() %>%"
+"0","  pivot_wider(names_from="".category"", values_from="".epred"")"

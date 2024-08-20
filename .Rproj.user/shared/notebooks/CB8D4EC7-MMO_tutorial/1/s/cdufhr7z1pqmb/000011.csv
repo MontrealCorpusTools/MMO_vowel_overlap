@@ -1,0 +1,7 @@
+"0","nd2 <- expand_grid(context = factor(levels(model$data$context),"
+"0","                                    levels=levels(model$data$context)),"
+"0","                   vowel = factor(levels(model$data$vowel),"
+"0","                                  levels=levels(model$data$vowel)),"
+"0","                   speaker = unique(model$data$speaker))"
+"0","num_draws=100"
+"0","num_points=25"
