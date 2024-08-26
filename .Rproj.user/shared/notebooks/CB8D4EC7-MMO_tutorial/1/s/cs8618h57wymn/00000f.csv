@@ -1,6 +1,0 @@
-"0","# set seed so that code is replicable"
-"0","set.seed(22)"
-"0","raleigh_data_50 <- raleigh_data %>%"
-"0","  group_by(speaker, context, vowel) %>% "
-"0","  slice_sample(n=50) %>%"
-"0","  ungroup()"

@@ -1,3 +1,0 @@
-"0","raleigh_data_norm <- raleigh_data_top10 %>%"
-"0","  group_by(speaker) %>% # vowels are normalized separately for each speaker"
-"0","  mutate(across(c(F1, F2), ~ (.x - mean(.x, na.rm = TRUE)) / sd(.x)))"

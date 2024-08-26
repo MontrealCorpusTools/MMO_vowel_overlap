@@ -1,0 +1,90 @@
+"0","library(brms)"
+"2","Loading required package: Rcpp
+"
+"2","Loading 'brms' package (version 2.18.0). Useful instructions
+can be found by typing help('brms'). A more detailed introduction
+to the package is available through vignette('brms_overview').
+"
+"2","
+Attaching package: ‘brms’
+
+"
+"2","The following object is masked from ‘package:stats’:
+
+    ar
+
+"
+"2","Warning message:
+"
+"2","In readRDS(path) :"
+"2"," error reading from connection
+"
+"0","library(tidybayes)"
+"2","
+Attaching package: ‘tidybayes’
+
+"
+"2","The following objects are masked from ‘package:brms’:
+
+    dstudent_t, pstudent_t, qstudent_t, rstudent_t
+
+"
+"0","library(adehabitatHR)"
+"2","Loading required package: sp
+"
+"2","Loading required package: deldir
+"
+"2","deldir 1.0-6      Nickname: ""Mendacious Cosmonaut""
+"
+"2","
+     The syntax of deldir() has had an important change. 
+     The arguments have been re-ordered (the first three 
+     are now ""x, y, z"") and some arguments have been 
+     eliminated.  The handling of the z (""tags"") 
+     argument has been improved.
+ 
+     The ""dummy points"" facility has been removed. 
+     This facility was a historical artefact, was really 
+     of no use to anyone, and had hung around much too 
+     long.  Since there are no longer any ""dummy points"", 
+     the structure of the value returned by deldir() has 
+     changed slightly.  The arguments of plot.deldir() 
+     have been adjusted accordingly; e.g. the character 
+     string ""wpoints"" (""which points"") has been 
+     replaced by the logical scalar ""showpoints"". 
+     The user should consult the help files.
+
+"
+"2","Loading required package: ade4
+"
+"2","Loading required package: adehabitatMA
+"
+"2","Registered S3 methods overwritten by 'adehabitatMA':
+  method                       from
+  print.SpatialPixelsDataFrame sp  
+  print.SpatialPixels          sp  
+"
+"2","Loading required package: adehabitatLT
+"
+"2","Loading required package: CircStats
+"
+"2","Loading required package: MASS
+"
+"2","Loading required package: boot
+"
+"0","library(tidyverse)"
+"2","Registered S3 methods overwritten by 'dbplyr':
+  method         from
+  print.tbl_lazy     
+  print.tbl_sql      
+"
+"2","── [1mAttaching packages[22m ───────────────────────────── tidyverse 1.3.2 ──"
+"2","[32m✔[39m [34mggplot2[39m 3.5.1     [32m✔[39m [34mpurrr  [39m 1.0.1
+[32m✔[39m [34mtibble [39m 3.2.1     [32m✔[39m [34mdplyr  [39m 1.1.0
+[32m✔[39m [34mtidyr  [39m 1.3.0     [32m✔[39m [34mstringr[39m 1.5.0
+[32m✔[39m [34mreadr  [39m 2.1.4     [32m✔[39m [34mforcats[39m 1.0.0"
+"2","── [1mConflicts[22m ──────────────────────────────── tidyverse_conflicts() ──
+[31m✖[39m [34mdplyr[39m::[32mfilter()[39m masks [34mstats[39m::filter()
+[31m✖[39m [34mdplyr[39m::[32mid()[39m     masks [34madehabitatLT[39m::id()
+[31m✖[39m [34mdplyr[39m::[32mlag()[39m    masks [34mstats[39m::lag()
+[31m✖[39m [34mdplyr[39m::[32mselect()[39m masks [34mMASS[39m::select()"

@@ -1,0 +1,6 @@
+"0","sp_estimates %>%"
+"0","  ggplot(aes(x=vowel, color=context, fill=context)) +"
+"0","  geom_point(shape=21, aes(y=F1)) +"
+"0","  geom_errorbar(aes(ymin=F1.lower, ymax=F1.upper)) +"
+"0","  geom_line(lty=1, aes(y=F1, group=context)) +"
+"0","  facet_wrap(~speaker)"

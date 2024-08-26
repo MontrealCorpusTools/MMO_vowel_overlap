@@ -1,0 +1,4 @@
+"0","fitted_sp %>%"
+"0","  ggplot(aes(x=vowel, y=F1, color=context)) +"
+"0","  geom_line(aes(group=interaction(context, .draw)), alpha=0.25) + "
+"0","  facet_wrap(~speaker)"

@@ -1,2 +1,0 @@
-"0","nd1 <- expand_grid(context = levels(model$data$context),"
-"0","                   vowel = levels(model$data$vowel))"

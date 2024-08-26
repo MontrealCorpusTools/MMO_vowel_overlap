@@ -1,4 +1,0 @@
-"0","rep_df <- function(df, n_reps)"
-"0","{"
-"0","  df_repeated <- do.call(""rbind"", replicate(n_reps, df, simplify = FALSE))"
-"0","}"

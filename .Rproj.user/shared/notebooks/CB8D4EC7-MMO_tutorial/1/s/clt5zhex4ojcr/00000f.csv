@@ -1,0 +1,7 @@
+"0","BA_mod_sp_wide <- BA_mod_sp %>%"
+"0","  pivot_wider(names_from=context, values_from=bhatt_aff) %>%"
+"0","  mutate(diff=nasal-oral) %>%"
+"0","  group_by(speaker) %>%"
+"0","  mean_qi()"
+"0",""
+"0","head(BA_mod_sp_wide)"

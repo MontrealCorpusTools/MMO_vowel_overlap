@@ -1,0 +1,12 @@
+"0","raleigh_data %>%"
+"0","  mutate(vowel=factor(vowel, levels=c('i', 'e'), c('/ɪ/', '/ɛ/'))) %>%"
+"0","  ggplot(aes(x=F2, y=F1, color=context)) +"
+"0","  stat_ellipse(level=0.66, aes(lty=vowel)) +"
+"0","  scale_x_reverse() + scale_y_reverse() +"
+"0","  xlim(2, -2) + ylim(2, -2) +"
+"0","  # coord_fixed() +"
+"0","  facet_wrap(~speaker)"
+"2","[38;5;232mScale for [32mx[38;5;232m is already present.
+Adding another scale for [32mx[38;5;232m, which will replace the existing scale.[39m"
+"2","[38;5;232mScale for [32my[38;5;232m is already present.
+Adding another scale for [32my[38;5;232m, which will replace the existing scale.[39m"

@@ -1,8 +1,0 @@
-"0","raleigh_data_norm %>%"
-"0","  ggplot(aes(x=F2, y=F1, color=phone_label)) +"
-"0","  geom_point(alpha=0.25, show.legend=FALSE) +"
-"0","  facet_wrap(~speaker) +"
-"0","  scale_x_reverse() + scale_y_reverse() +"
-"0","  # scale_color_bright() +"
-"0","  theme_minimal() +"
-"0","  theme(text = element_text(family = ""atkinson""))"

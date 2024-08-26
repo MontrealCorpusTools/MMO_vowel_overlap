@@ -1,4 +1,0 @@
-"0","sp_estimates %>%"
-"0","  ggplot(aes(x=context, y=F2, color=vowel)) +"
-"0","  geom_point() +"
-"0","  geom_line(aes(group=interaction(vowel, speaker)))"

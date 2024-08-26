@@ -1,0 +1,17 @@
+"0","raleigh_data %>%"
+"0","  group_by(speaker, vowel, context) %>% "
+"0","  summarize(across(c(F1, F2), mean)) %>%"
+"0","  ungroup() %>%"
+"0","  ggplot(aes(x=F2, y=F1, color=context, shape=vowel)) +"
+"0","  stat_ellipse(data=raleigh_data, level=0.66, aes(lty=vowel)) +"
+"0","  geom_point() +"
+"0","  geom_line(aes(group=interaction(context, speaker))) +"
+"0","  scale_x_reverse() + scale_y_reverse() +"
+"0","  xlim(2, -2) + ylim(2, -2) +"
+"0","  coord_fixed() +"
+"0","  facet_wrap(~speaker)"
+"2","`summarise()` has grouped output by 'speaker', 'vowel'. You can override using the `.groups` argument."
+"2","[38;5;232mScale for [32mx[38;5;232m is already present.
+Adding another scale for [32mx[38;5;232m, which will replace the existing scale.[39m"
+"2","[38;5;232mScale for [32my[38;5;232m is already present.
+Adding another scale for [32my[38;5;232m, which will replace the existing scale.[39m"

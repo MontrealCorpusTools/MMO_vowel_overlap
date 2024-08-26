@@ -1,0 +1,7 @@
+"0","ED_mod_sp <- fitted_sp %>%"
+"0","  # reshape the dataframe so that ""i"" and ""e"" are in separate columns"
+"0","  pivot_wider(names_from=""vowel"", values_from=c(""F1"", ""F2"")) %>%"
+"0","  # now apply the pythagorean theorem, which defines Euclidean distance"
+"0","  mutate(eucl_dist = sqrt((F1_i - F1_e)^2 + (F2_i - F2_e)^2))"
+"0",""
+"0","head(ED_mod_sp)"

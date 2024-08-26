@@ -1,0 +1,5 @@
+"0",""
+"0","ED_mod_sp_wide %>%"
+"0","  ggplot(aes(x=reorder(speaker, -nasal), y=nasal)) +"
+"0","  geom_point() +"
+"0","  geom_linerange(aes(ymin=nasal.lower, ymax=nasal.upper))"

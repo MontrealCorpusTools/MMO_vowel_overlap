@@ -1,0 +1,1 @@
+{"height":8.0,"width":12.944,"size_behavior":1,"conditions":[[1,"Warning: \u001B[38;5;232mRemoved 42 rows containing non-finite outside the scale range (`stat_ellipse()`).\u001B[39m"],[1,"Warning: \u001B[38;5;232mRemoved 118 rows containing non-finite outside the scale range (`stat_ellipse()`).\u001B[39m"]]}
