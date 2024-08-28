@@ -5,7 +5,7 @@ author:
     url: "http://www.irenebrsmith.com"
     affiliations:
       - McGill University
-date: 2025-9-1
+date: 2024-9-1
 bibliography: bibliography.bib
 format: 
   html: default
@@ -15,24 +15,26 @@ knitr:
   opts_chunk: 
     message: false
 ---
+
 ## Introduction
-This tutorial is meant to accompany @smith_modelled_2024 ([preprint](https://arxiv.org/pdf/2406.16319)), which describes a new method for calculating vowel merger: Modelled Multivariate Overlap (MMO). The application discussed in the paper and shown in this tutorial is the PIN-PEN merger [@labov_atlas_2006]. We operationalize the degree of merger between two vowels as the amount of distributional overlap in F1 / F2 space between those two vowels. While the paper and the tutorial both focus on vowel merger, the method applies more generally to quantifying the overlap between distributions of any kind, including distributions in more than 2 dimensions[^1]. Additionally, this method is flexible in that it can be applied for any measure of overlap that can be calculated from empirical distributions. Here, we show the method applied to calculate Bhattacharyya affinity and Euclidean distance, but it could also be used to calculate Pillai or scores any of the other methods described in @nycz_best_2014 or @kelley_comparison_2020. 
 
-[^1]: The ability to implement an overlap measure in more than 2 dimensions may vary from one measure to the next. For example, the R implementation of Bhattacharyya affinity in `adehabitatHR` only allows for 2-dimensional distributions, but Bhattacharyya affinity is theoretically defined for an arbitrary number of dimensions. 
+This tutorial is meant to accompany @smith_modelled_2024 ([preprint](https://arxiv.org/pdf/2406.16319)), which describes a new method for calculating vowel merger: Modelled Multivariate Overlap (MMO). The application discussed in the paper and shown in this tutorial is the PIN-PEN merger [@labov_atlas_2006]. We operationalize the degree of merger between two vowels as the amount of distributional overlap in F1 / F2 space between those two vowels. While the paper and the tutorial both focus on vowel merger, the method applies more generally to quantifying the overlap between distributions of any kind, including distributions in more than 2 dimensions[^1]. Additionally, this method is flexible in that it can be applied for any measure of overlap that can be calculated from empirical distributions. Here, we show the method applied to calculate Bhattacharyya affinity and Euclidean distance, but it could also be used to calculate Pillai or scores any of the other methods described in @nycz_best_2014 or @kelley_comparison_2020.
 
-The steps for calculating MMO are outlined below. For more details, see @smith_modelled_2024. The steps are written for the PIN-PEN merger application that is carried throughout this tutorial, so "F1," "F2," "vowel," and "context" might be different quantities in your specific application. 
+[^1]: The ability to implement an overlap measure in more than 2 dimensions may vary from one measure to the next. For example, the R implementation of Bhattacharyya affinity in `adehabitatHR` only allows for 2-dimensional distributions, but Bhattacharyya affinity is theoretically defined for an arbitrary number of dimensions.
 
-1. Preprocessing: Must include some form of normalization of F1 and F2 , so that overlap measures are comparable across speakers. After normalization, we discard all vowels except for the two that are interest here: /ɪ/ and /ɛ/. In addition to these two steps, you can do whatever data cleaning or transformations you like, such as centering and scaling predictors, or eliminating problem tokens.
+The steps for calculating MMO are outlined below. For more details, see @smith_modelled_2024. The steps are written for the PIN-PEN merger application that is carried throughout this tutorial, so "F1," "F2," "vowel," and "context" might be different quantities in your specific application.
 
-2. Modelling: Fit a multivariate model to jointly predict F1 and F2. Bayesian multivariate modelling is an extremely convenient way to implement MMO, because it directly models distributions. However, if you have another way to generate a modelled distribution, go for it. If fitting Bayesian models is intimidating for you, the code for fitting a model in `brms` that is included here, along with basic knowledge of `lmer`-style model syntax, should be enough to get you fitting your own Bayesian models. The Interspeech2024 subfolder of this repository has examples of more complex `brms` models, specifically, with modelled variance and nested random effects structures.  
+1.  Preprocessing: Must include some form of normalization of F1 and F2 , so that overlap measures are comparable across speakers. After normalization, we discard all vowels except for the two that are interest here: /ɪ/ and /ɛ/. In addition to these two steps, you can do whatever data cleaning or transformations you like, such as centering and scaling predictors, or eliminating problem tokens.
 
-3. Simulation: Using the model that was fit in Step 2, simulate tokens of each vowel, varying or holding constant other variables as appropriate. For example, for the PIN-PEN merger, `context` (prenasal or preoral) needs to be accounted for, so we simulate tokens for each `vowel`-by-`context` pair. If `duration` and `speaker gender` were included as model predictors, then it might make sense to hold `duration` constant (for example, at its average value across all tokens of all speakers) and to set `speaker gender` to the appropriate value for each speaker. Simulations can be made either for each individual speaker, or for the "average" speaker. Below, we show how to make both of these kinds of simulations using the `tidybayes` package. 
+2.  Modelling: Fit a multivariate model to jointly predict F1 and F2. Bayesian multivariate modelling is an extremely convenient way to implement MMO, because it directly models distributions. However, if you have another way to generate a modelled distribution, go for it. If fitting Bayesian models is intimidating for you, the code for fitting a model in `brms` that is included here, along with basic knowledge of `lmer`-style model syntax, should be enough to get you fitting your own Bayesian models. The Interspeech2024 subfolder of this repository has examples of more complex `brms` models, specifically, with modelled variance and nested random effects structures.
 
-4. Overlap calculation: Now that you have simulated an empirical distribution, you can calculate any measure of overlap you like. This tutorial shows how to calculate Bhattacharyya affinity and Euclidean distance. 
+3.  Simulation: Using the model that was fit in Step 2, simulate tokens of each vowel, varying or holding constant other variables as appropriate. For example, for the PIN-PEN merger, `context` (prenasal or preoral) needs to be accounted for, so we simulate tokens for each `vowel`-by-`context` pair. If `duration` and `speaker gender` were included as model predictors, then it might make sense to hold `duration` constant (for example, at its average value across all tokens of all speakers) and to set `speaker gender` to the appropriate value for each speaker. Simulations can be made either for each individual speaker, or for the "average" speaker. Below, we show how to make both of these kinds of simulations using the `tidybayes` package.
 
-Finally, this tutorial is designed such that it can reasonably be run locally on a personal computer. The most resource-intensive step is fitting the Bayesian model: if this is too much for your computer, you should download the fitted model (**where?**) and put it in the same folder as this script: if the file is in the correct place, the `brm` line will read the file instead of fitting the model, and spare your computer in the process. If you do fit the model, it will be saved and then read-in instead of re-fit when you re-run the `brm` command. 
+4.  Overlap calculation: Now that you have simulated an empirical distribution, you can calculate any measure of overlap you like. This tutorial shows how to calculate Bhattacharyya affinity and Euclidean distance.
 
-It is very likely that, if you are fitting models on corpus data, you will need to use an external server or cluster to fit your models. Making model predictions and calculating Bhattacharyya affinity can also be very resource-intensive, so I would also recommend calculating those externally and saving the output. The Interspeech2024 folder has examples of scripts for doing this. 
+Finally, this tutorial is designed such that it can reasonably be run locally on a personal computer. The most resource-intensive step is fitting the Bayesian model: if this is too much for your computer, you should download the fitted model (**where?**) and put it in the same folder as this script: if the file is in the correct place, the `brm` line will read the file instead of fitting the model, and spare your computer in the process. If you do fit the model, it will be saved and then read-in instead of re-fit when you re-run the `brm` command.
+
+It is possible that, if you are fitting models on corpus data, you will need a more powerful computer than your personal computer. Making model predictions and calculating Bhattacharyya affinity can also be very resource-intensive, so I would also recommend calculating those externally and saving the output. The Interspeech2024 folder has examples of scripts for doing this.
 
 ## Packages
 
@@ -40,16 +42,15 @@ It is very likely that, if you are fitting models on corpus data, you will need 
 # renv::use(lockfile = "renv.lock")
 ```
 
-The following packages were used to carry out the core parts of the analysis: 
+The following packages were used to carry out the core parts of the analysis:
 
-* `brms` [@burkner_advanced_2018] is used to fit the Bayesian model. It uses `RStan` [@stan_rstan], which needs to be manually installed. Instructions for installing `RStan` can be found [here](https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started). Once `RStan` is installed, `brms` can simply be installed using `install.packages("brms")` (more information [here](https://paul-buerkner.github.io/brms/)). 
+-   `brms` [@burkner_advanced_2018] is used to fit the Bayesian model. It uses `RStan` [@stan_rstan], which needs to be manually installed. Instructions for installing `RStan` can be found [here](https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started). Once `RStan` is installed, `brms` can simply be installed using `install.packages("brms")` (more information [here](https://paul-buerkner.github.io/brms/)).
 
-* `tidybayes` [@kay_tidybayes_2020] is used to get model predictions and to summarize model predictions. 
+-   `tidybayes` [@kay_tidybayes_2020] is used to get model predictions and to summarize model predictions.
 
-* `adehabitatHR`[@calenge_the_2006] is the package used to compute Bhattacharyya affinity. The code below is adapted from [Joey Stanley's tutorial](https://joeystanley.com/blog/a-tutorial-in-calculating-vowel-overlap/).
+-   `adehabitatHR`[@calenge_the_2006] is the package used to compute Bhattacharyya affinity. The code below is adapted from [Joey Stanley's tutorial](https://joeystanley.com/blog/a-tutorial-in-calculating-vowel-overlap/).
 
-* `tityverse` is used for `ggplot2` and `dplyr` functionality.
-
+-   `tidyverse` is used for `ggplot2` and `dplyr` functionality.
 
 ```{r analysis_libraries, results=FALSE, warning=FALSE}
 library(brms)
@@ -57,11 +58,12 @@ library(tidybayes)
 library(adehabitatHR)
 library(tidyverse)
 ```
+
 For visualizing results, we use the following libraries:
 
-* `patchwork` to help arrange `ggplot2` plots
-* `showtext` not sure yet, it was included in the ling methods hub template
-* `khroma` for extra color palettes
+-   `patchwork` to help arrange `ggplot2` plots
+-   `showtext` not sure yet, it was included in the ling methods hub template
+-   `khroma` for extra color palettes
 
 ```{r visual_libraries, results=FALSE, warning=FALSE}
 library(patchwork)
@@ -78,13 +80,13 @@ theme_set(theme_minimal())
 
 ## Data processing
 
-We'll be using the Raleigh corpus [@dodsworth_language_2020] from the SPADE project [@sonderegger_managing_2022], available on [OSF](https://osf.io/79jgu). Download it and put the file in the data folder. 
+We'll be using the Raleigh corpus [@dodsworth_language_2020] from the SPADE project [@sonderegger_managing_2022], available on [OSF](https://osf.io/79jgu). Download it and put the file in the data folder.
 
 ```{r load_data}
 raleigh_data_full <- read.csv("data/spade-Raleigh_formants_whitelisted.csv")
 ```
 
-To make this tutorial run-able on a personal laptop, we'll just use the ten speakers who have the most data. 
+To make this tutorial run-able on a personal laptop, we'll just use the ten speakers who have the most data.
 
 ```{r top_10_sp}
 # make a vector containing the names of the 10 speakers with the most data
@@ -111,7 +113,7 @@ raleigh_data_norm <- raleigh_data_top10 %>%
   mutate(across(c(F1, F2), ~ (.x - mean(.x, na.rm = TRUE)) / sd(.x)))
 ```
 
-Check to see that the vowels are reasonably z-scored: 
+Check to see that the vowels are reasonably z-scored:
 
 ```{r check_normalization, warning=FALSE}
 raleigh_data_norm %>%
@@ -164,8 +166,8 @@ raleigh_data <- raleigh_data_norm %>%
 head(raleigh_data)
 ```
 
-
 There is currently too much data to fit the model on my computer, so we randomly pick 50 tokens of each `vowel`-by-`context` pair for each speaker. If you're still having trouble fitting a model, you could try sampling even fewer tokens.
+
 ```{r sample_50}
 # set seed so that code is replicable
 set.seed(22)
@@ -176,14 +178,13 @@ raleigh_data_50 <- raleigh_data %>%
   ungroup()
 ```
 
-
 ## Exploratory plots
 
-Let's make some exploratory plots to set up our expectations. 
+Let's make some exploratory plots to set up our expectations.
 
-First, let's just start with looking at the `vowel`-by-`context` distributions in F1 / F2 space for each speaker. 
+First, let's just start with looking at the `vowel`-by-`context` distributions in F1 / F2 space for each speaker.
 
-If you want, you can change the vowel labels to their IPA symbols by mutating the `vowel` column before passing the data to `ggplot`. I'll do this once to demonstrate, but in the remaining plots, '/ɪ/' and '/ɛ/' will show up as 'i' and 'e'. 
+If you want, you can change the vowel labels to their IPA symbols by mutating the `vowel` column before passing the data to `ggplot`. I'll do this once to demonstrate, but in the remaining plots, '/ɪ/' and '/ɛ/' will show up as 'i' and 'e'.
 
 ```{r empirical_distributions}
 raleigh_data %>%
@@ -212,7 +213,6 @@ raleigh_data %>%
   coord_fixed() +
   facet_wrap(~speaker)
 ```
-
 
 The average (across speakers) effect of context on vowel for both F1 and F2.
 
@@ -247,6 +247,7 @@ p_av_F2 <- raleigh_data %>%
 
 p_av_F1 + p_av_F2 + plot_layout(guides='collect')
 ```
+
 Now we can make the same plot but with each individual speaker's interactions:
 
 ```{r F1_vowel_by_context_emp_sp}
@@ -273,9 +274,10 @@ p_F1_sp_emp + p_F2_sp_emp + plot_layout(guides='collect')
 
 ## Model fitting
 
-We are going to fit a simple multivariate Bayesian model (similar to the "minimal" model in our Interspeech paper [@smith_modelled_2024]). For more model syntax examples (including more complex model structures, such as nested random effects, modelling variance, and predictors with nonlinear effects), see the model-fitting scripts in the Interspeech folder of the github repository. 
+We are going to fit a simple multivariate Bayesian model (similar to the "minimal" model in our Interspeech paper [@smith_modelled_2024]). For more model syntax examples (including more complex model structures, such as nested random effects, modelling variance, and predictors with nonlinear effects), see the model-fitting scripts in the Interspeech folder of the github repository.
 
-The model we are fitting jointly models F1 and F2, which is a key feature of the method we're proposing. The remainder of the model structure is quite simple. The fixed predictors are context, vowel, log duration, and all interactions. There are by-word and by-speaker random intercepts, and by-speaker random slopes of of vowel, context, and their interaction. 
+The model we are fitting jointly models F1 and F2, which is a key feature of the method we're proposing. The remainder of the model structure is quite simple. The fixed predictors are context, vowel, log duration, and all interactions. There are by-word and by-speaker random intercepts, and by-speaker random slopes of of vowel, context, and their interaction.
+
 ```{r fit_model}
 # "p" and "q" are just dummy variables and can be anything
 F1 = bf(F1 ~ 
@@ -314,30 +316,32 @@ model <- brm(F1 + F2 +
 
 ```
 
-
-The key difference between a Bayesian model (like the one we just fit) and a frequentist model (which we could fit with very similar model syntax in `lmer`) is that the Bayesian model is modelling the *distributions* of the output variables, whereas frequentist models fit a point prediction. While I am not here to take an ideological stance, the fact that Bayesian models inherently predict distributions is extremely useful for the present application. 
+The key difference between a Bayesian model (like the one we just fit) and a frequentist model (which we could fit with very similar model syntax in `lmer`) is that the Bayesian model is modelling the *distributions* of the output variables, whereas frequentist models fit a point prediction. While I am not here to take an ideological stance, the fact that Bayesian models inherently predict distributions is extremely useful for the present application.
 
 Below, you can see all of the different parameters that were fit, and the priors that were used for each.
+
 ```{r model_summary}
 prior_summary(model)
 ```
+
 ## Simulate distributions
-The important thing to know when making predictions from a Bayesian model is that the *data* (or response variables) are modelled as random variables that are distributed according to the predictor variables and a set of *parameters*, which are themselves random variables. The process of fitting the model is the process of *finding the distributions for the parameters* (called "posterior" distributions) which best describe the data. When we are generating predictions from a fitted Bayesian model, we are essentially *drawing values of random variables*. 
+
+The important thing to know when making predictions from a Bayesian model is that the *data* (or response variables) are modelled as random variables that are distributed according to the predictor variables and a set of *parameters*, which are themselves random variables. The process of fitting the model is the process of *finding the distributions for the parameters* (called "posterior" distributions) which best describe the data. When we are generating predictions from a fitted Bayesian model, we are essentially *drawing values of random variables*.
 
 The process of taking a draw goes like so: First, draw a value from the posterior of each parameter. Combine the drawn parameter values with the predictors of interest, and draw a value from the *posterior predictive distribution*. (or is it posterior predicted distribution?)
 
-For example, say that I want to model `y` as a linear function of `x`, and furthermore that I think `y` is distributed normally around the "best fit line" (i.e., if we were to plot each (x, y) point and then find the vertical distance of each point from the "best fit line", those distances would be normally distributed). Then the posterior predictive distribution would be defined as y_i ~ N(mu_i, sigma) (the "Gaussian" part of the model). Additionally, mu_i = alpha + beta*x_i (the "linear" part of the model). Finally, sigma, alpha, and beta all have underlying distributions. So, to get a single y_i, you would first draw one value each from the distributions for sigma, alpha, and beta. Then you would pick a value for x_i, and calculate mu_i. Finally, you would draw a value for y_i, using the (drawn and computed) values for mu_i and sigma. Note that each draw gets one value for each parameter from their posterior distributions, but can use an arbitrary number of combinations of input predictors. 
+For example, say that I want to model `y` as a linear function of `x`, and furthermore that I think `y` is distributed normally around the "best fit line" (i.e., if we were to plot each (x, y) point and then find the vertical distance of each point from the "best fit line", those distances would be normally distributed). Then the posterior predictive distribution would be defined as y_i \~ N(mu_i, sigma) (the "Gaussian" part of the model). Additionally, mu_i = alpha + beta\*x_i (the "linear" part of the model). Finally, sigma, alpha, and beta all have underlying distributions. So, to get a single y_i, you would first draw one value each from the distributions for sigma, alpha, and beta. Then you would pick a value for x_i, and calculate mu_i. Finally, you would draw a value for y_i, using the (drawn and computed) values for mu_i and sigma. Note that each draw gets one value for each parameter from their posterior distributions, but can use an arbitrary number of combinations of input predictors.
 
-Usuing `tidybayes`, we can simulate draws of the *parameters* (using `add_epred_draws`) or of the *data* (using `add_predicted_draws`). Which one you choose to do should be determined by the quantity you want to compute from the predictions. We'll show both in this tutorial, because the two measures of overlap that we will be calculating (Bhattacharyya affinity and Euclidean distance) necessitate different kinds of predictions.  
+Using `tidybayes`, we can simulate draws of the *parameters* (using `add_epred_draws`) or of the *data* (using `add_predicted_draws`). Which one you choose to do should be determined by the quantity you want to compute from the predictions. We'll show both in this tutorial, because the two measures of overlap that we will be calculating (Bhattacharyya affinity and Euclidean distance) necessitate different kinds of predictions.
 
-Now that we have more background on what we want to do, let's start making predictions. First, we need to know what parameter values to predict for. For our application, we at least want to get predicted values for each combination of `vowel` and `context`. 
+Now that we have more background on what we want to do, let's start making predictions. First, we need to know what parameter values to predict for. For our application, we at least want to get predicted values for each combination of `vowel` and `context`.
 
-Because we have by-`speaker` random intercepts with `vowel`-by-`context` random slopes, we can make predictions for each `speaker`-by-`vowel`-by-`context` pair. We can also make predictions for the "average" speaker by discarding the entire random effects structure. We will do both. (All of the analysis is done for the "average" word, i.e., the by-word random intercepts are always ignored. Looking at lexical effects would open a whole new set of possible research questions, so be my guest if this is of interest.) 
+Because we have by-`speaker` random intercepts with `vowel`-by-`context` random slopes, we can make predictions for each `speaker`-by-`vowel`-by-`context` pair. We can also make predictions for the "average" speaker by discarding the entire random effects structure. We will do both. (All of the analysis is done for the "average" word, i.e., the by-word random intercepts are always ignored. Looking at lexical effects would open a whole new set of possible research questions, so be my guest if this is of interest.)
 
+Additionally, we will also want to make by-speaker predictions, so we'll want to If we want to make predictions for an "average speaker," we want to ignore the random effects structure entirely, i.e., predict F1 and F2 as a function of just vowel and context.
 
-Additionally, we will also want to make by-speaker predictions, so we'll want to   If we want to make predictions for an "average speaker," we want to ignore the random effects structure entirely, i.e., predict F1 and F2 as a function of just vowel and context. 
+Let's make a dataframe with every combination of vowel and context: these are what we use to make the "average" speaker simulations. You unfortunately need to reset the factor levels, since the `levels()` function (not to be confused with the `levels` argument to the `factor()` function) makes a vector of character strings and not factors.
 
-Let's make a dataframe with every combination of vowel and context: these are what we use to make the "average" speaker simulations. You unfortunately need to reset the factor levels, since the `levels()` function (not to be confused with the `levels` argument to the `factor()` function) makes a vector of character strings and not factors. 
 ```{r draw_input_av}
 # these are both vectors of characters, but their order is determined by the 
 # order in the model
@@ -352,7 +356,8 @@ av_preds <- expand_grid(context = factor(context_levels,
 head(av_preds)
 ```
 
-Similarly, let's make a dataframe with every combination of speaker, vowel, and context. We use this one to make all of our by-speaker simulations. 
+Similarly, let's make a dataframe with every combination of speaker, vowel, and context. We use this one to make all of our by-speaker simulations.
+
 ```{r draw_input_sp}
 sp_preds <- expand_grid(context = factor(context_levels,
                                     levels=context_levels),
@@ -370,9 +375,10 @@ num_draws=100
 num_points=25
 ```
 
-Now, let's make our first simulations. Here, we are making by-speaker predictions for the F1 and F2 *means* as a function of context and vowel. The resulting distribution is the posterior for the *means* of the data, not the distributions for the data itself. This is what we want in order to compute Euclidean distance. 
+Now, let's make our first simulations. Here, we are making by-speaker predictions for the F1 and F2 *means* as a function of context and vowel. The resulting distribution is the posterior for the *means* of the data, not the distributions for the data itself. This is what we want in order to compute Euclidean distance.
 
 When computing Euclidean distance from empirical distributions, we get the distribution center by averaging, but that isn't necessary if we are predicting from the model because we already have a distribution of the estimate for the mean from the model we fit!
+
 ```{r fitted_sp}
 fitted_sp <- sp_preds %>% 
   add_epred_draws(model, 
@@ -390,9 +396,8 @@ fitted_sp <- sp_preds %>%
 head(fitted_sp)
 ```
 
+Now we do the exact same thing, but this time, we exclude the random effects in order to draw from the distribution of the means for the *average* speaker.
 
-
-Now we do the exact same thing, but this time, we exclude the random effects in order to draw from the distribution of the means for the *average* speaker. 
 ```{r fitted_av}
 fitted_av <- av_preds %>% 
   add_epred_draws(model, 
@@ -410,7 +415,8 @@ head(fitted_av)
 
 Each row in `fitted_sp` and `fitted_av` should be interpreted as a possible value of the mean. Because we have 100 such values, we can use this variation to estimate our uncertainty in an estimate of the mean (or of any quantity calculated from these dataframes).
 
-Now, instead of simulating the means, let's simulate the data. For this, we use `add_predicted_draws`, but aside from that, the procedure is the same as above. Here, we're not actually using these two dataframes to calculate a measure of overlap, but these are the dataframes that are directly comparable to the empirical distributions, so we do want to look at them. 
+Now, instead of simulating the means, let's simulate the data. For this, we use `add_predicted_draws`, but aside from that, the procedure is the same as above. Here, we're not actually using these two dataframes to calculate a measure of overlap, but these are the dataframes that are directly comparable to the empirical distributions, so we do want to look at them.
+
 ```{r predicted_sp}
 predicted_sp <- sp_preds %>% 
   add_predicted_draws(model, 
@@ -435,7 +441,7 @@ predicted_av <- av_preds %>%
 head(predicted_sp)
 ```
 
-We need to make special dataframes for the Bhattacharyya affinity calculations because we want to be able to calculate uncertainty. Bhattacharyya affinity is calculated by first estimating the underlying distribution of the data and therefore takes multiple datapoints to estimate (the more, the better). If we used the `predicted_sp` and `predicted_av` dataframes to calculate BA, then we would only get one BA estimate per person, and would not be able to estimate uncertainty. Instead, the approach is to simulate multiple values from the posterior predictive distribution using a fixed value for each of the parameters, i.e., make multiple output values from a single draw. We still take multiple draws, and calculate Bhattacharyya affinity *for each draw*. To accomplish this, we pass in the same combination of predictor variables multiple times, since we get one of each output for each set of predictors that are passed in. 
+We need to make special dataframes for the Bhattacharyya affinity calculations because we want to be able to calculate uncertainty. Bhattacharyya affinity is calculated by first estimating the underlying distribution of the data and therefore takes multiple datapoints to estimate (the more, the better). If we used the `predicted_sp` and `predicted_av` dataframes to calculate BA, then we would only get one BA estimate per person, and would not be able to estimate uncertainty. Instead, the approach is to simulate multiple values from the posterior predictive distribution using a fixed value for each of the parameters, i.e., make multiple output values from a single draw. We still take multiple draws, and calculate Bhattacharyya affinity *for each draw*. To accomplish this, we pass in the same combination of predictor variables multiple times, since we get one of each output for each set of predictors that are passed in.
 
 To start, let's define a function for repeating a dataframe `df` `n_rep` times. We don't need to do this, but it makes the code for getting the predicted dataframes cleaner.
 
@@ -466,7 +472,9 @@ predicted_sp_BA <- sp_preds %>%
 
 head(predicted_sp_BA)
 ```
-Taking "BA draws" for the average speaker is likewise exactly analygous to what we have already done: 
+
+Taking "BA draws" for the average speaker is likewise exactly analygous to what we have already done:
+
 ```{r predicted_av_BA}
 predicted_av_BA <- av_preds %>% 
   rep_df(num_points) %>%
@@ -522,9 +530,10 @@ p_dist_empirical <- raleigh_data %>%
 
 p_dist_modelled + p_dist_empirical
 ```
-Notice that all of the ellipses in the modelled distributions have roughly the same size and orientation: this is because, with the way the model that fit them is defined, we have fit a single variance-covariance matrix. If we want variability to be allowed to vary across speakers, contexts, and vowels (which we probably do), we have to model variance too. An example of how to do this is in the **xxx script** in the Interspeech2024 folder. 
 
-We can also plot the by-speaker interactions, like we did for the empirical data: 
+Notice that all of the ellipses in the modelled distributions have roughly the same size and orientation: this is because, with the way the model that fit them is defined, we have fit a single variance-covariance matrix. If we want variability to be allowed to vary across speakers, contexts, and vowels (which we probably do), we have to model variance too. An example of how to do this is in the **xxx script** in the Interspeech2024 folder.
+
+We can also plot the by-speaker interactions, like we did for the empirical data:
 
 ```{r F1_interaction_sp}
 p_F1_interaction_modelled <- fitted_sp %>%
@@ -580,7 +589,7 @@ p_F2_interaction_empirical <- raleigh_data %>%
 
 Now, we'll make some plots that we couldn't make from the empirical data: plots showing uncertainty!
 
-Let's make a dataframe with an estimate of the mean F1 and F2, along with 95% credible intervals. `tidybayes` has a useful set of functions for doing this: we'll use `mean_qi()`, which gives you the mean and 95% quantile intervals (unless otherwise specified), but there are other options (any combination of mean, median, or mode, plus qi (quantile interval), hdi (highest-density interval), or hdci (highest-density continuous interval), e.g., `mode_hdci()`). For estimating uncertainty (in the form of 95% credible intervals), we will default to using `mean_qi()` in this tutorial. 
+Let's make a dataframe with an estimate of the mean F1 and F2, along with 95% credible intervals. `tidybayes` has a useful set of functions for doing this: we'll use `mean_qi()`, which gives you the mean and 95% quantile intervals (unless otherwise specified), but there are other options (any combination of mean, median, or mode, plus qi (quantile interval), hdi (highest-density interval), or hdci (highest-density continuous interval), e.g., `mode_hdci()`). For estimating uncertainty (in the form of 95% credible intervals), we will default to using `mean_qi()` in this tutorial.
 
 ```{r sp_estimates}
 sp_estimates <- fitted_sp %>%
@@ -592,6 +601,7 @@ head(sp_estimates)
 ```
 
 Now we can use this dataframe to show uncertainty. For example, we can plot errorbars on the by-speaker vowel-by-context estimates
+
 ```{r}
 sp_estimates %>%
   ggplot(aes(x=vowel, color=context, fill=context)) +
@@ -602,7 +612,8 @@ sp_estimates %>%
   
 ```
 
-Another way to visualize the uncertainty is to plot all of the mean draws together, like so: 
+Another way to visualize the uncertainty is to plot all of the mean draws together, like so:
+
 ```{r}
 fitted_sp %>%
   ggplot(aes(x=vowel, y=F1, color=context)) +
@@ -610,11 +621,12 @@ fitted_sp %>%
   facet_wrap(~speaker)
   
 ```
-The good thing about this way of viewing uncertainty is that it demonstrates that the variability is actually *less* than what just the errorbars show, i.e., the draws vary mostly in their intercepts, not their slopes (I'm sure there's a better way to say this...)
 
+The good thing about this way of viewing uncertainty is that it demonstrates that the variability is actually *less* than what just the errorbars show, i.e., the draws vary mostly in their intercepts, not their slopes.
 
 ## Overlap calculations
-Now that we have predicted and fitted dataframes that "look like" the raw data, we can calculate any measure of overlap we like. 
+
+Now that we have predicted and fitted dataframes that "look like" the raw data, we can calculate any measure of overlap we like.
 
 Let's define a function to calculate Bhattacharyya affinity. For further explanation, see [Joey Stanley's thorough tutorial](https://joeystanley.com/blog/a-tutorial-in-calculating-vowel-overlap/).
 
@@ -632,7 +644,8 @@ bhatt <- function (F1, F2, vowel)
 }
 ```
 
-First, let's calculate BA from the empirical distributions: 
+First, let's calculate BA from the empirical distributions:
+
 ```{r bhatt_calc_emp, cache=TRUE}
 BA_emp_sp <- raleigh_data %>%
   group_by(speaker, context) %>% # calcualte for each speaker and context
@@ -642,9 +655,9 @@ BA_emp_sp <- raleigh_data %>%
 head(BA_emp_sp)
 ```
 
-Notice that we have gotten rid of the `vowel` column: because we are calculating the overlap *between vowels*, we will always lose the vowel column when we calculate overlap. 
+Notice that we have gotten rid of the `vowel` column: because we are calculating the overlap *between vowels*, we will always lose the vowel column when we calculate overlap.
 
-We calculate the by-speaker modelled BA in much the same way: 
+We calculate the by-speaker modelled BA in much the same way:
 
 ```{r bhatt_calc_sp, cache=TRUE}
 BA_mod_sp <- predicted_sp_BA %>%
@@ -654,7 +667,9 @@ BA_mod_sp <- predicted_sp_BA %>%
 
 head(BA_mod_sp)
 ```
-And finally, the average-speaker modelled BA: 
+
+And finally, the average-speaker modelled BA:
+
 ```{r bhatt_calc_av, cache=TRUE}
 BA_mod_av <- predicted_av_BA %>%
   group_by(context, .draw) %>% # calculate for each context draw
@@ -680,9 +695,11 @@ ED_emp_sp <- raleigh_data %>%
 
 head(ED_emp_sp)
 ```
-This leaves us with "vestigial" formant-by-vowel columns: they're not hurting anyone, and they could be of interest, so I'll leave them in. 
 
-We calculate modelled ED from the "fitted" modelled predictions: we calculate one value from each draw. We don't do any averaging, because each draw is from the distribution of the mean itself. 
+This leaves us with "vestigial" formant-by-vowel columns: they're not hurting anyone, and they could be of interest, so I'll leave them in.
+
+We calculate modelled ED from the "fitted" modelled predictions: we calculate one value from each draw. We don't do any averaging, because each draw is from the distribution of the mean itself.
+
 ```{r eucl_calc_sp}
 ED_mod_sp <- fitted_sp %>%
   # reshape the dataframe so that "i" and "e" are in separate columns
@@ -702,9 +719,11 @@ ED_mod_av <- fitted_av %>%
 
 head(ED_mod_av)
 ```
-We have now calculated the overlap (or distance) in the form of Bhattacharyya affinity and Euclidean distance, from both the empirical and modelled distributions, for each individual speaker and for the "average speaker" (modelled only). From the modelled distributions, we have calculated 100 different values, each from a different draw from the posterior, for each speaker and context. This gives us *distributions* for BA and ED. 
 
-Now that we have by-speaker distributions of BA, let's calculate the by-speaker confidence intervals (CIs) for prenasal and preoral BA. We can also calculate the difference between prenasal and preoral BA, and the CI for the difference. To do this, we first take the difference by draw, then calculate the CI based on the distribution of the difference, just like for the BA values. 
+We have now calculated the overlap (or distance) in the form of Bhattacharyya affinity and Euclidean distance, from both the empirical and modelled distributions, for each individual speaker and for the "average speaker" (modelled only). From the modelled distributions, we have calculated 100 different values, each from a different draw from the posterior, for each speaker and context. This gives us *distributions* for BA and ED.
+
+Now that we have by-speaker distributions of BA, let's calculate the by-speaker confidence intervals (CIs) for prenasal and preoral BA. We can also calculate the difference between prenasal and preoral BA, and the CI for the difference. To do this, we first take the difference by draw, then calculate the CI based on the distribution of the difference, just like for the BA values.
+
 ```{r}
 BA_mod_sp_wide <- BA_mod_sp %>%
   pivot_wider(names_from=context, values_from=bhatt_aff) %>%
@@ -724,6 +743,7 @@ BA_emp_sp_wide <- BA_emp_sp %>%
 
 head(BA_emp_sp_wide)
 ```
+
 Now let's do the same thing for modelled and empirical Euclidean distance:
 
 ```{r}
@@ -753,7 +773,7 @@ p_BA_mod <- BA_mod_sp_wide %>%
   xlim(0, 1) + ylim(0, 1) +
   geom_abline(lty=3) +
   coord_fixed() +
-  xlab('proral BA') + ylab('prenasal BA')
+  xlab('preoral BA') + ylab('prenasal BA')
 
 p_BA_emp <- BA_emp_sp_wide %>%
   ggplot(aes(x=oral, y=nasal, color=speaker)) +
@@ -761,7 +781,7 @@ p_BA_emp <- BA_emp_sp_wide %>%
   xlim(0, 1) + ylim(0, 1) +
   geom_abline(lty=3) +
   coord_fixed() +
-  xlab('proral BA') + ylab('prenasal BA')
+  xlab('preoral BA') + ylab('prenasal BA')
 
 p_ED_mod <- ED_mod_sp_wide %>%
   ggplot(aes(x=oral, y=nasal, color=speaker)) +
@@ -783,41 +803,49 @@ p_ED_emp <- ED_emp_sp_wide %>%
   (p_ED_mod + p_ED_emp) + # I want to collect the axes, but the command isn't working; see this patchwork issue: https://github.com/thomasp85/patchwork/issues/366
   plot_layout(guides='collect')
 ```
+
 ```{r}
-BA_mod_sp_wide %>%
-  ggplot(aes(x=reorder(speaker, nasal), y=oral)) +
+p_BA_oral <- BA_mod_sp_wide %>%
+  ggplot(aes(x=reorder(speaker, nasal), y=oral, color=speaker)) +
   geom_point() +
   geom_linerange(aes(ymin=oral.lower, ymax=oral.upper))
 
-BA_mod_sp_wide %>%
-  ggplot(aes(x=reorder(speaker, nasal), y=nasal)) +
+p_BA_nasal <- BA_mod_sp_wide %>%
+  ggplot(aes(x=reorder(speaker, nasal), y=nasal, color=speaker)) +
   geom_point() +
   geom_linerange(aes(ymin=nasal.lower, ymax=nasal.upper))
 
-BA_mod_sp_wide %>%
-  ggplot(aes(x=reorder(speaker, nasal), y=diff)) +
+p_BA_diff <- BA_mod_sp_wide %>%
+  ggplot(aes(x=reorder(speaker, nasal), y=diff, color=speaker)) +
   geom_point() +
   geom_linerange(aes(ymin=diff.lower, ymax=diff.upper))
+
+p_BA_oral /
+  p_BA_nasal /
+  p_BA_diff +
+  plot_layout(guides='collect')
 ```
 
 ```{r}
-ED_mod_sp_wide %>%
+p_ED_oral <- ED_mod_sp_wide %>%
   ggplot(aes(x=reorder(speaker, -nasal), y=oral)) +
   geom_point() +
   geom_linerange(aes(ymin=oral.lower, ymax=oral.upper))
 
-ED_mod_sp_wide %>%
+p_ED_nasal <- ED_mod_sp_wide %>%
   ggplot(aes(x=reorder(speaker, -nasal), y=nasal)) +
   geom_point() +
   geom_linerange(aes(ymin=nasal.lower, ymax=nasal.upper))
 
-ED_mod_sp_wide %>%
+p_ED_diff <- ED_mod_sp_wide %>%
   ggplot(aes(x=reorder(speaker, -nasal), y=diff)) +
   geom_point() +
   geom_linerange(aes(ymin=diff.lower, ymax=diff.upper))
+
+p_ED_oral /
+  p_ED_nasal /
+  p_ED_diff
 ```
-
-
 
 ```{r, echo=FALSE}
 # palmerpenguins::penguins %>%

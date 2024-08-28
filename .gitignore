@@ -1,2 +1,9 @@
 spade-Raleigh_formants_whitelisted.csv
 tutorial_model.rds
+presentation_plots.R
+univariate_model_preds.png
+spade_dialects_2023_06_14.csv
+*_keysymbols.csv
+spade-*_formants_whitelisted.csv
+unilex
+*.brm

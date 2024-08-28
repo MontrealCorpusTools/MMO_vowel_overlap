@@ -1,0 +1,45 @@
+"0","knitr::opts_chunk$set(echo = TRUE)"
+"0","library(tidyverse)"
+"0","library(adehabitatHR)"
+"0","library(arm)"
+"2","Loading required package: Matrix
+"
+"2","
+Attaching package: ‘Matrix’
+
+"
+"2","The following objects are masked from ‘package:tidyr’:
+
+    expand, pack, unpack
+
+"
+"2","Loading required package: lme4
+"
+"2","
+arm (Version 1.14-4, built: 2024-4-1)
+
+"
+"2","Working directory is C:/Users/warbl/Documents/GitHub/MMO_vowel_overlap/Interspeech_analysis/scripts
+
+"
+"2","
+Attaching package: ‘arm’
+
+"
+"2","The following object is masked from ‘package:boot’:
+
+    logit
+
+"
+"0","library(tidybayes)"
+"0","library(patchwork)"
+"2","
+Attaching package: ‘patchwork’
+
+"
+"2","The following object is masked from ‘package:MASS’:
+
+    area
+
+"
+"0","library(ggrepel)"

@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Irene B. R. Smith">
-<meta name="dcterms.date" content="2025-09-01">
+<meta name="dcterms.date" content="2024-09-01">
 
 <title>MMO Tutorial</title>
 <style>
@@ -125,7 +125,7 @@ div.csl-indent {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">September 1, 2025</p>
+      <p class="date">September 1, 2024</p>
     </div>
   </div>
   
@@ -146,7 +146,7 @@ div.csl-indent {
 <li><p>Overlap calculation: Now that you have simulated an empirical distribution, you can calculate any measure of overlap you like. This tutorial shows how to calculate Bhattacharyya affinity and Euclidean distance.</p></li>
 </ol>
 <p>Finally, this tutorial is designed such that it can reasonably be run locally on a personal computer. The most resource-intensive step is fitting the Bayesian model: if this is too much for your computer, you should download the fitted model (<strong>where?</strong>) and put it in the same folder as this script: if the file is in the correct place, the <code>brm</code> line will read the file instead of fitting the model, and spare your computer in the process. If you do fit the model, it will be saved and then read-in instead of re-fit when you re-run the <code>brm</code> command.</p>
-<p>It is very likely that, if you are fitting models on corpus data, you will need to use an external server or cluster to fit your models. Making model predictions and calculating Bhattacharyya affinity can also be very resource-intensive, so I would also recommend calculating those externally and saving the output. The Interspeech2024 folder has examples of scripts for doing this.</p>
+<p>It is possible that, if you are fitting models on corpus data, you will need a more powerful computer than your personal computer. Making model predictions and calculating Bhattacharyya affinity can also be very resource-intensive, so I would also recommend calculating those externally and saving the output. The Interspeech2024 folder has examples of scripts for doing this.</p>
 </section>
 <section id="packages" class="level2">
 <h2 class="anchored" data-anchor-id="packages">Packages</h2>
@@ -155,7 +155,7 @@ div.csl-indent {
 <li><p><code>brms</code> <span class="citation" data-cites="burkner_advanced_2018">(<a href="#ref-burkner_advanced_2018" role="doc-biblioref">Bürkner 2018</a>)</span> is used to fit the Bayesian model. It uses <code>RStan</code> <span class="citation" data-cites="stan_rstan">(<a href="#ref-stan_rstan" role="doc-biblioref">Stan Development Team, n.d.</a>)</span>, which needs to be manually installed. Instructions for installing <code>RStan</code> can be found <a href="https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started">here</a>. Once <code>RStan</code> is installed, <code>brms</code> can simply be installed using <code>install.packages("brms")</code> (more information <a href="https://paul-buerkner.github.io/brms/">here</a>).</p></li>
 <li><p><code>tidybayes</code> <span class="citation" data-cites="kay_tidybayes_2020">(<a href="#ref-kay_tidybayes_2020" role="doc-biblioref">Kay 2020</a>)</span> is used to get model predictions and to summarize model predictions.</p></li>
 <li><p><code>adehabitatHR</code><span class="citation" data-cites="calenge_the_2006">(<a href="#ref-calenge_the_2006" role="doc-biblioref">Calenge 2006</a>)</span> is the package used to compute Bhattacharyya affinity. The code below is adapted from <a href="https://joeystanley.com/blog/a-tutorial-in-calculating-vowel-overlap/">Joey Stanley’s tutorial</a>.</p></li>
-<li><p><code>tityverse</code> is used for <code>ggplot2</code> and <code>dplyr</code> functionality.</p></li>
+<li><p><code>tidyverse</code> is used for <code>ggplot2</code> and <code>dplyr</code> functionality.</p></li>
 </ul>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(brms)</span>
@@ -509,7 +509,7 @@ div.csl-indent {
 <p>The important thing to know when making predictions from a Bayesian model is that the <em>data</em> (or response variables) are modelled as random variables that are distributed according to the predictor variables and a set of <em>parameters</em>, which are themselves random variables. The process of fitting the model is the process of <em>finding the distributions for the parameters</em> (called “posterior” distributions) which best describe the data. When we are generating predictions from a fitted Bayesian model, we are essentially <em>drawing values of random variables</em>.</p>
 <p>The process of taking a draw goes like so: First, draw a value from the posterior of each parameter. Combine the drawn parameter values with the predictors of interest, and draw a value from the <em>posterior predictive distribution</em>. (or is it posterior predicted distribution?)</p>
 <p>For example, say that I want to model <code>y</code> as a linear function of <code>x</code>, and furthermore that I think <code>y</code> is distributed normally around the “best fit line” (i.e., if we were to plot each (x, y) point and then find the vertical distance of each point from the “best fit line”, those distances would be normally distributed). Then the posterior predictive distribution would be defined as y_i ~ N(mu_i, sigma) (the “Gaussian” part of the model). Additionally, mu_i = alpha + beta*x_i (the “linear” part of the model). Finally, sigma, alpha, and beta all have underlying distributions. So, to get a single y_i, you would first draw one value each from the distributions for sigma, alpha, and beta. Then you would pick a value for x_i, and calculate mu_i. Finally, you would draw a value for y_i, using the (drawn and computed) values for mu_i and sigma. Note that each draw gets one value for each parameter from their posterior distributions, but can use an arbitrary number of combinations of input predictors.</p>
-<p>Usuing <code>tidybayes</code>, we can simulate draws of the <em>parameters</em> (using <code>add_epred_draws</code>) or of the <em>data</em> (using <code>add_predicted_draws</code>). Which one you choose to do should be determined by the quantity you want to compute from the predictions. We’ll show both in this tutorial, because the two measures of overlap that we will be calculating (Bhattacharyya affinity and Euclidean distance) necessitate different kinds of predictions.</p>
+<p>Using <code>tidybayes</code>, we can simulate draws of the <em>parameters</em> (using <code>add_epred_draws</code>) or of the <em>data</em> (using <code>add_predicted_draws</code>). Which one you choose to do should be determined by the quantity you want to compute from the predictions. We’ll show both in this tutorial, because the two measures of overlap that we will be calculating (Bhattacharyya affinity and Euclidean distance) necessitate different kinds of predictions.</p>
 <p>Now that we have more background on what we want to do, let’s start making predictions. First, we need to know what parameter values to predict for. For our application, we at least want to get predicted values for each combination of <code>vowel</code> and <code>context</code>.</p>
 <p>Because we have by-<code>speaker</code> random intercepts with <code>vowel</code>-by-<code>context</code> random slopes, we can make predictions for each <code>speaker</code>-by-<code>vowel</code>-by-<code>context</code> pair. We can also make predictions for the “average” speaker by discarding the entire random effects structure. We will do both. (All of the analysis is done for the “average” word, i.e., the by-word random intercepts are always ignored. Looking at lexical effects would open a whole new set of possible research questions, so be my guest if this is of interest.)</p>
 <p>Additionally, we will also want to make by-speaker predictions, so we’ll want to If we want to make predictions for an “average speaker,” we want to ignore the random effects structure entirely, i.e., predict F1 and F2 as a function of just vowel and context.</p>
@@ -876,7 +876,7 @@ div.csl-indent {
 <p><img src="MMO_tutorial_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
-<p>The good thing about this way of viewing uncertainty is that it demonstrates that the variability is actually <em>less</em> than what just the errorbars show, i.e., the draws vary mostly in their intercepts, not their slopes (I’m sure there’s a better way to say this…)</p>
+<p>The good thing about this way of viewing uncertainty is that it demonstrates that the variability is actually <em>less</em> than what just the errorbars show, i.e., the draws vary mostly in their intercepts, not their slopes.</p>
 </section>
 <section id="overlap-calculations" class="level2">
 <h2 class="anchored" data-anchor-id="overlap-calculations">Overlap calculations</h2>
@@ -1117,7 +1117,7 @@ div.csl-indent {
 <span id="cb66-4"><a href="#cb66-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlim</span>(<span class="dv">0</span>, <span class="dv">1</span>) <span class="sc">+</span> <span class="fu">ylim</span>(<span class="dv">0</span>, <span class="dv">1</span>) <span class="sc">+</span></span>
 <span id="cb66-5"><a href="#cb66-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_abline</span>(<span class="at">lty=</span><span class="dv">3</span>) <span class="sc">+</span></span>
 <span id="cb66-6"><a href="#cb66-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_fixed</span>() <span class="sc">+</span></span>
-<span id="cb66-7"><a href="#cb66-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">'proral BA'</span>) <span class="sc">+</span> <span class="fu">ylab</span>(<span class="st">'prenasal BA'</span>)</span>
+<span id="cb66-7"><a href="#cb66-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">'preoral BA'</span>) <span class="sc">+</span> <span class="fu">ylab</span>(<span class="st">'prenasal BA'</span>)</span>
 <span id="cb66-8"><a href="#cb66-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb66-9"><a href="#cb66-9" aria-hidden="true" tabindex="-1"></a>p_BA_emp <span class="ot">&lt;-</span> BA_emp_sp_wide <span class="sc">%&gt;%</span></span>
 <span id="cb66-10"><a href="#cb66-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x=</span>oral, <span class="at">y=</span>nasal, <span class="at">color=</span>speaker)) <span class="sc">+</span></span>
@@ -1125,7 +1125,7 @@ div.csl-indent {
 <span id="cb66-12"><a href="#cb66-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlim</span>(<span class="dv">0</span>, <span class="dv">1</span>) <span class="sc">+</span> <span class="fu">ylim</span>(<span class="dv">0</span>, <span class="dv">1</span>) <span class="sc">+</span></span>
 <span id="cb66-13"><a href="#cb66-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_abline</span>(<span class="at">lty=</span><span class="dv">3</span>) <span class="sc">+</span></span>
 <span id="cb66-14"><a href="#cb66-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_fixed</span>() <span class="sc">+</span></span>
-<span id="cb66-15"><a href="#cb66-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">'proral BA'</span>) <span class="sc">+</span> <span class="fu">ylab</span>(<span class="st">'prenasal BA'</span>)</span>
+<span id="cb66-15"><a href="#cb66-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">'preoral BA'</span>) <span class="sc">+</span> <span class="fu">ylab</span>(<span class="st">'prenasal BA'</span>)</span>
 <span id="cb66-16"><a href="#cb66-16" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb66-17"><a href="#cb66-17" aria-hidden="true" tabindex="-1"></a>p_ED_mod <span class="ot">&lt;-</span> ED_mod_sp_wide <span class="sc">%&gt;%</span></span>
 <span id="cb66-18"><a href="#cb66-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x=</span>oral, <span class="at">y=</span>nasal, <span class="at">color=</span>speaker)) <span class="sc">+</span></span>
@@ -1151,49 +1151,50 @@ div.csl-indent {
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb67"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a>BA_mod_sp_wide <span class="sc">%&gt;%</span></span>
-<span id="cb67-2"><a href="#cb67-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x=</span><span class="fu">reorder</span>(speaker, nasal), <span class="at">y=</span>oral)) <span class="sc">+</span></span>
+<div class="sourceCode cell-code" id="cb67"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a>p_BA_oral <span class="ot">&lt;-</span> BA_mod_sp_wide <span class="sc">%&gt;%</span></span>
+<span id="cb67-2"><a href="#cb67-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x=</span><span class="fu">reorder</span>(speaker, nasal), <span class="at">y=</span>oral, <span class="at">color=</span>speaker)) <span class="sc">+</span></span>
 <span id="cb67-3"><a href="#cb67-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
-<span id="cb67-4"><a href="#cb67-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_linerange</span>(<span class="fu">aes</span>(<span class="at">ymin=</span>oral.lower, <span class="at">ymax=</span>oral.upper))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb67-4"><a href="#cb67-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_linerange</span>(<span class="fu">aes</span>(<span class="at">ymin=</span>oral.lower, <span class="at">ymax=</span>oral.upper))</span>
+<span id="cb67-5"><a href="#cb67-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb67-6"><a href="#cb67-6" aria-hidden="true" tabindex="-1"></a>p_BA_nasal <span class="ot">&lt;-</span> BA_mod_sp_wide <span class="sc">%&gt;%</span></span>
+<span id="cb67-7"><a href="#cb67-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x=</span><span class="fu">reorder</span>(speaker, nasal), <span class="at">y=</span>nasal, <span class="at">color=</span>speaker)) <span class="sc">+</span></span>
+<span id="cb67-8"><a href="#cb67-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb67-9"><a href="#cb67-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_linerange</span>(<span class="fu">aes</span>(<span class="at">ymin=</span>nasal.lower, <span class="at">ymax=</span>nasal.upper))</span>
+<span id="cb67-10"><a href="#cb67-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb67-11"><a href="#cb67-11" aria-hidden="true" tabindex="-1"></a>p_BA_diff <span class="ot">&lt;-</span> BA_mod_sp_wide <span class="sc">%&gt;%</span></span>
+<span id="cb67-12"><a href="#cb67-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x=</span><span class="fu">reorder</span>(speaker, nasal), <span class="at">y=</span>diff, <span class="at">color=</span>speaker)) <span class="sc">+</span></span>
+<span id="cb67-13"><a href="#cb67-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb67-14"><a href="#cb67-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_linerange</span>(<span class="fu">aes</span>(<span class="at">ymin=</span>diff.lower, <span class="at">ymax=</span>diff.upper))</span>
+<span id="cb67-15"><a href="#cb67-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb67-16"><a href="#cb67-16" aria-hidden="true" tabindex="-1"></a>p_BA_oral <span class="sc">/</span></span>
+<span id="cb67-17"><a href="#cb67-17" aria-hidden="true" tabindex="-1"></a>  p_BA_nasal <span class="sc">/</span></span>
+<span id="cb67-18"><a href="#cb67-18" aria-hidden="true" tabindex="-1"></a>  p_BA_diff <span class="sc">+</span></span>
+<span id="cb67-19"><a href="#cb67-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot_layout</span>(<span class="at">guides=</span><span class="st">'collect'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <p><img src="MMO_tutorial_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid" width="672"></p>
 </div>
-<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a>BA_mod_sp_wide <span class="sc">%&gt;%</span></span>
-<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x=</span><span class="fu">reorder</span>(speaker, nasal), <span class="at">y=</span>nasal)) <span class="sc">+</span></span>
-<span id="cb68-3"><a href="#cb68-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
-<span id="cb68-4"><a href="#cb68-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_linerange</span>(<span class="fu">aes</span>(<span class="at">ymin=</span>nasal.lower, <span class="at">ymax=</span>nasal.upper))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output-display">
-<p><img src="MMO_tutorial_files/figure-html/unnamed-chunk-10-2.png" class="img-fluid" width="672"></p>
-</div>
-<div class="sourceCode cell-code" id="cb69"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a>BA_mod_sp_wide <span class="sc">%&gt;%</span></span>
-<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x=</span><span class="fu">reorder</span>(speaker, nasal), <span class="at">y=</span>diff)) <span class="sc">+</span></span>
-<span id="cb69-3"><a href="#cb69-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
-<span id="cb69-4"><a href="#cb69-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_linerange</span>(<span class="fu">aes</span>(<span class="at">ymin=</span>diff.lower, <span class="at">ymax=</span>diff.upper))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output-display">
-<p><img src="MMO_tutorial_files/figure-html/unnamed-chunk-10-3.png" class="img-fluid" width="672"></p>
-</div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb70"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a>ED_mod_sp_wide <span class="sc">%&gt;%</span></span>
-<span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x=</span><span class="fu">reorder</span>(speaker, <span class="sc">-</span>nasal), <span class="at">y=</span>oral)) <span class="sc">+</span></span>
-<span id="cb70-3"><a href="#cb70-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
-<span id="cb70-4"><a href="#cb70-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_linerange</span>(<span class="fu">aes</span>(<span class="at">ymin=</span>oral.lower, <span class="at">ymax=</span>oral.upper))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a>p_ED_oral <span class="ot">&lt;-</span> ED_mod_sp_wide <span class="sc">%&gt;%</span></span>
+<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x=</span><span class="fu">reorder</span>(speaker, <span class="sc">-</span>nasal), <span class="at">y=</span>oral)) <span class="sc">+</span></span>
+<span id="cb68-3"><a href="#cb68-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb68-4"><a href="#cb68-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_linerange</span>(<span class="fu">aes</span>(<span class="at">ymin=</span>oral.lower, <span class="at">ymax=</span>oral.upper))</span>
+<span id="cb68-5"><a href="#cb68-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb68-6"><a href="#cb68-6" aria-hidden="true" tabindex="-1"></a>p_ED_nasal <span class="ot">&lt;-</span> ED_mod_sp_wide <span class="sc">%&gt;%</span></span>
+<span id="cb68-7"><a href="#cb68-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x=</span><span class="fu">reorder</span>(speaker, <span class="sc">-</span>nasal), <span class="at">y=</span>nasal)) <span class="sc">+</span></span>
+<span id="cb68-8"><a href="#cb68-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb68-9"><a href="#cb68-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_linerange</span>(<span class="fu">aes</span>(<span class="at">ymin=</span>nasal.lower, <span class="at">ymax=</span>nasal.upper))</span>
+<span id="cb68-10"><a href="#cb68-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb68-11"><a href="#cb68-11" aria-hidden="true" tabindex="-1"></a>p_ED_diff <span class="ot">&lt;-</span> ED_mod_sp_wide <span class="sc">%&gt;%</span></span>
+<span id="cb68-12"><a href="#cb68-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x=</span><span class="fu">reorder</span>(speaker, <span class="sc">-</span>nasal), <span class="at">y=</span>diff)) <span class="sc">+</span></span>
+<span id="cb68-13"><a href="#cb68-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb68-14"><a href="#cb68-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_linerange</span>(<span class="fu">aes</span>(<span class="at">ymin=</span>diff.lower, <span class="at">ymax=</span>diff.upper))</span>
+<span id="cb68-15"><a href="#cb68-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb68-16"><a href="#cb68-16" aria-hidden="true" tabindex="-1"></a>p_ED_oral <span class="sc">/</span></span>
+<span id="cb68-17"><a href="#cb68-17" aria-hidden="true" tabindex="-1"></a>  p_ED_nasal <span class="sc">/</span></span>
+<span id="cb68-18"><a href="#cb68-18" aria-hidden="true" tabindex="-1"></a>  p_ED_diff</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <p><img src="MMO_tutorial_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid" width="672"></p>
-</div>
-<div class="sourceCode cell-code" id="cb71"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a>ED_mod_sp_wide <span class="sc">%&gt;%</span></span>
-<span id="cb71-2"><a href="#cb71-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x=</span><span class="fu">reorder</span>(speaker, <span class="sc">-</span>nasal), <span class="at">y=</span>nasal)) <span class="sc">+</span></span>
-<span id="cb71-3"><a href="#cb71-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
-<span id="cb71-4"><a href="#cb71-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_linerange</span>(<span class="fu">aes</span>(<span class="at">ymin=</span>nasal.lower, <span class="at">ymax=</span>nasal.upper))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output-display">
-<p><img src="MMO_tutorial_files/figure-html/unnamed-chunk-11-2.png" class="img-fluid" width="672"></p>
-</div>
-<div class="sourceCode cell-code" id="cb72"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a>ED_mod_sp_wide <span class="sc">%&gt;%</span></span>
-<span id="cb72-2"><a href="#cb72-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x=</span><span class="fu">reorder</span>(speaker, <span class="sc">-</span>nasal), <span class="at">y=</span>diff)) <span class="sc">+</span></span>
-<span id="cb72-3"><a href="#cb72-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
-<span id="cb72-4"><a href="#cb72-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_linerange</span>(<span class="fu">aes</span>(<span class="at">ymin=</span>diff.lower, <span class="at">ymax=</span>diff.upper))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output-display">
-<p><img src="MMO_tutorial_files/figure-html/unnamed-chunk-11-3.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 
