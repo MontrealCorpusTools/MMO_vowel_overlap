@@ -18,25 +18,40 @@ knitr:
 
 ## Introduction
 
+To skip ahead to running code, go to [the next section](#Packages). 
+
 This tutorial is meant to accompany @smith_modelled_2024 ([preprint](https://arxiv.org/pdf/2406.16319)), which describes a new method for calculating vowel merger: Modelled Multivariate Overlap (MMO). The application discussed in the paper and shown in this tutorial is the PIN-PEN merger [@labov_atlas_2006]. We operationalize the degree of merger between two vowels as the amount of distributional overlap in F1 / F2 space between those two vowels. While the paper and the tutorial both focus on vowel merger, the method applies more generally to quantifying the overlap between distributions of any kind, including distributions in more than 2 dimensions[^1]. Additionally, this method is flexible in that it can be applied for any measure of overlap that can be calculated from empirical distributions. Here, we show the method applied to calculate Bhattacharyya affinity and Euclidean distance, but it could also be used to calculate Pillai or scores any of the other methods described in @nycz_best_2014 or @kelley_comparison_2020.
 
 [^1]: The ability to implement an overlap measure in more than 2 dimensions may vary from one measure to the next. For example, the R implementation of Bhattacharyya affinity in `adehabitatHR` only allows for 2-dimensional distributions, but Bhattacharyya affinity is theoretically defined for an arbitrary number of dimensions.
 
 The steps for calculating MMO are outlined below. For more details, see @smith_modelled_2024. The steps are written for the PIN-PEN merger application that is carried throughout this tutorial, so "F1," "F2," "vowel," and "context" might be different quantities in your specific application.
 
-1.  Preprocessing: Must include some form of normalization of F1 and F2 , so that overlap measures are comparable across speakers. After normalization, we discard all vowels except for the two that are interest here: /ɪ/ and /ɛ/. In addition to these two steps, you can do whatever data cleaning or transformations you like, such as centering and scaling predictors, or eliminating problem tokens.
+1.  **Preprocessing** 
+* Likely includes some form of normalization of F1 and F2 , so that overlap measures are comparable across speakers
+* After normalization, we discard all vowels except for the two that are interest here: /ɪ/ and /ɛ/
+* In addition to these two steps, you can do whatever data cleaning or transformations you like, such as centering and scaling predictors, or eliminating problem tokens
 
-2.  Modelling: Fit a multivariate model to jointly predict F1 and F2. Bayesian multivariate modelling is an extremely convenient way to implement MMO, because it directly models distributions. However, if you have another way to generate a modelled distribution, go for it. If fitting Bayesian models is intimidating for you, the code for fitting a model in `brms` that is included here, along with basic knowledge of `lmer`-style model syntax, should be enough to get you fitting your own Bayesian models. The Interspeech2024 subfolder of this repository has examples of more complex `brms` models, specifically, with modelled variance and nested random effects structures.
+2.  **Modelling**: Fit a multivariate model to jointly predict F1 and F2. 
+* Bayesian multivariate modelling is an extremely convenient way to implement MMO, because it directly models distributions
+* If you have another way to generate a modelled distribution, go for it
+* If fitting Bayesian models is intimidating for you, the code for fitting a model in `brms` that is included here, along with basic knowledge of `lmer`-style model syntax, should be enough to get you fitting your own Bayesian models
+* The Interspeech2024 subfolder of this repository has examples of more complex `brms` models, specifically, with modelled variance and nested random effects structures
 
-3.  Simulation: Using the model that was fit in Step 2, simulate tokens of each vowel, varying or holding constant other variables as appropriate. For example, for the PIN-PEN merger, `context` (prenasal or preoral) needs to be accounted for, so we simulate tokens for each `vowel`-by-`context` pair. If `duration` and `speaker gender` were included as model predictors, then it might make sense to hold `duration` constant (for example, at its average value across all tokens of all speakers) and to set `speaker gender` to the appropriate value for each speaker. Simulations can be made either for each individual speaker, or for the "average" speaker. Below, we show how to make both of these kinds of simulations using the `tidybayes` package.
+3.  **Simulation**: Using the model that was fit in Step 2, simulate tokens of each vowel
+  * Vary or hold constant other variables as appropriate
+    - For example, for the PIN-PEN merger, `context` (prenasal or preoral) needs to be accounted for, so we simulate tokens for each `vowel`-by-`context` pair
+    - If `duration` and `speaker gender` were included as model predictors, then it might make sense to hold `duration` constant (for example, at its average value across all tokens of all speakers) and to set `speaker gender` to the appropriate value for each speaker
+  * Simulations can be made either for each individual speaker, or for the "average" speaker
+  * Below, we show how to make both of these kinds of simulations using the `tidybayes` package
 
-4.  Overlap calculation: Now that you have simulated an empirical distribution, you can calculate any measure of overlap you like. This tutorial shows how to calculate Bhattacharyya affinity and Euclidean distance.
+4.  **Overlap calculation**: Now that you have simulated an empirical distribution, you can calculate any measure of overlap you like. 
+* This tutorial shows how to calculate Bhattacharyya affinity and Euclidean distance
 
-Finally, this tutorial is designed such that it can reasonably be run locally on a personal computer. The most resource-intensive step is fitting the Bayesian model: if this is too much for your computer, you should download the fitted model (**where?**) and put it in the same folder as this script: if the file is in the correct place, the `brm` line will read the file instead of fitting the model, and spare your computer in the process. If you do fit the model, it will be saved and then read-in instead of re-fit when you re-run the `brm` command.
+Finally, this tutorial is designed such that it can reasonably be run locally on a personal computer. The most resource-intensive step is fitting the Bayesian model: if this is too much for your computer, you can reduce the dataset even further than shown here. After fitting the model once, the `brm` line will read the file instead of fitting the model, and spare your computer the need to re-fit the model from scratch. 
 
 It is possible that, if you are fitting models on corpus data, you will need a more powerful computer than your personal computer. Making model predictions and calculating Bhattacharyya affinity can also be very resource-intensive, so I would also recommend calculating those externally and saving the output. The Interspeech2024 folder has examples of scripts for doing this.
 
-## Packages
+## Packages {#Packages}
 
 ```{r, results=FALSE, echo=FALSE}
 # renv::use(lockfile = "renv.lock")
@@ -62,106 +77,23 @@ library(tidyverse)
 For visualizing results, we use the following libraries:
 
 -   `patchwork` to help arrange `ggplot2` plots
--   `showtext` not sure yet, it was included in the ling methods hub template
 -   `khroma` for extra color palettes
 
 ```{r visual_libraries, results=FALSE, warning=FALSE}
 library(patchwork)
-# library(showtext)
 library(khroma)
 
 # set global plot theme to theme_minimal
 theme_set(theme_minimal())
-
-# # these commands affect the appearance of plots
-# font_add_google("Atkinson Hyperlegible", "atkinson")
-# showtext_auto()
 ```
 
-## Data processing
+## Data
 
-We'll be using the Raleigh corpus [@dodsworth_language_2020] from the SPADE project [@sonderegger_managing_2022], available on [OSF](https://osf.io/79jgu). Download it and put the file in the data folder.
+We'll be using the Raleigh corpus [@dodsworth_language_2020] from the SPADE project [@sonderegger_managing_2022], available on [OSF](https://osf.io/79jgu). The data has been Lobanov normalized [@lobanov_classification_1971] and subsetted to include stressed tokens of /ɪ/ and /ɛ/ from 10 speakers. To see the preprocessing details, look at the script create_tutorial_dataset.R. 
+
 
 ```{r load_data}
-raleigh_data_full <- read.csv("data/spade-Raleigh_formants_whitelisted.csv")
-```
-
-To make this tutorial run-able on a personal laptop, we'll just use the ten speakers who have the most data.
-
-```{r top_10_sp}
-# make a vector containing the names of the 10 speakers with the most data
-top_10_speakers <- raleigh_data_full %>%
-  count(speaker) %>% # the number of tokens per speaker 
-  mutate(rank=dense_rank(desc(n))) %>% # rank number of tokens with most=1
-  filter(rank <= 10) %>% # filter out everyone except the top 10 speakers
-  pull(speaker) # convert speaker column to a vector
-
-# filter the original dataset to only include top 10 speakers 
-raleigh_data_top10 <- raleigh_data_full %>%
-  filter(speaker %in% top_10_speakers) 
-
-# we won't be using the full dataset anymore, so let's get rid of it to 
-# save a little memory
-rm(raleigh_data_full)
-```
-
-Before narrowing down to the two vowels of interest (/ɪ/ and /ɛ/), we want to Lobanov normalize F1 and F2 for each speaker using all of their vowel tokens [@lobanov_classification_1971], i.e., take a z-score of F1 and F2 across all vowel tokens for each speaker.
-
-```{r lobanov_normalize, warning=FALSE}
-raleigh_data_norm <- raleigh_data_top10 %>%
-  group_by(speaker) %>% # vowels are normalized separately for each speaker
-  mutate(across(c(F1, F2), ~ (.x - mean(.x, na.rm = TRUE)) / sd(.x)))
-```
-
-Check to see that the vowels are reasonably z-scored:
-
-```{r check_normalization, warning=FALSE}
-raleigh_data_norm %>%
-  ggplot(aes(x=F2, y=F1, color=phone_label)) +
-  geom_point(alpha=0.25, show.legend=FALSE) +
-  facet_wrap(~speaker) +
-  scale_x_reverse() + scale_y_reverse() +
-  # scale_color_bright() +
-  coord_fixed() +
-  theme(text = element_text(family = "atkinson"))
-```
-
-Indeed, these all look like vowel spaces with tokens mostly falling between -2 and +2 in both dimensions. This is what we should get from z-scoring.
-
-Now, let's narrow down the dataset to the tokens and quantities we're interested in. We want stressed tokens of /ɪ/ and /ɛ/.
-
-```{r filter_data}
-raleigh_data <- raleigh_data_norm %>%
-  # pick out just syllables with primary stress
-  filter(syllable_stress==1) %>%
-  # grab the /ɪ/ and /ɛ/ tokens.
-  # match the unisyn label to the phone label for a quality check
-  filter((phone_label=="EH1" & UnisynPrimStressedVowel1=="e") | 
-           (phone_label=="IH1" & UnisynPrimStressedVowel1=="i")) %>%
-  # make sure that UR in this dialect corresponds to lexical set 
-  # (more important when there is more than one dialect)
-  filter(unisynPrimStressedVowel2_sca==UnisynPrimStressedVowel1) %>%
-  # label the context according to following consonant
-  mutate(context = case_when(
-    following_phone %in% c("B", "CH", "D", "DH", "F", "G", "HH", "JH", "K",
-                           "L", "P", "R", "S", "SH", "T", "TH", "V", "W",
-                           "Y", "Z", "ZH" ) ~ "oral", # oral consonants
-    following_phone %in% c("N", "M", "NG") ~ "nasal", # nasal consonants
-    TRUE ~ "other")) %>% 
-  # get rid of everything that isn't an oral or nasal consonant
-  filter(context != "other") %>% 
-  # get rid of voiced prevalar contexts (can include, but would want 
-  # following consonant included in model as a predictor or random effect)
-  filter(following_phone!="NG", following_phone!="G") %>%
-  # make vowel and context factors 
-  mutate(vowel = factor(UnisynPrimStressedVowel1,
-                        levels=c('i', 'e')),
-         context = factor(context,
-                          levels=c('oral', 'nasal'))) %>%
-  # make sure that there aren't extraneous levels
-  droplevels() %>%
-  # keep just the columns we're interested in
-  dplyr::select(speaker, vowel, context, word, F1, F2)
+raleigh_data <- readRDS("data/Raleigh_subset.rds")
 
 head(raleigh_data)
 ```
@@ -180,6 +112,8 @@ raleigh_data_50 <- raleigh_data %>%
 
 ## Exploratory plots
 
+This section is not strictly necessary. To skip ahead, go to [Model Fitting](#Model_Fitting).
+
 Let's make some exploratory plots to set up our expectations.
 
 First, let's just start with looking at the `vowel`-by-`context` distributions in F1 / F2 space for each speaker.
@@ -192,9 +126,9 @@ raleigh_data %>%
   ggplot(aes(x=F2, y=F1, color=context)) +
   stat_ellipse(level=0.66, aes(lty=vowel)) +
   scale_x_reverse() + scale_y_reverse() +
-  xlim(2, -2) + ylim(2, -2) +
-  coord_fixed() +
-  facet_wrap(~speaker)
+  coord_cartesian(xlim=c(2, -2), ylim=c(2, -2), clip='off') +
+  facet_wrap(~speaker) +
+  theme(aspect.ratio=1)
 ```
 
 Let's look at each speaker's category center on the same graph. The lines connecting the centers represent the Euclidean distance between vowel for each context (prenasal and preoral).
@@ -209,9 +143,9 @@ raleigh_data %>%
   geom_point() +
   geom_line(aes(group=interaction(context, speaker))) +
   scale_x_reverse() + scale_y_reverse() +
-  xlim(2, -2) + ylim(2, -2) +
-  coord_fixed() +
-  facet_wrap(~speaker)
+  coord_cartesian(xlim=c(2, -2), ylim=c(2, -2), clip='off') +
+  facet_wrap(~speaker) +
+  theme(aspect.ratio=1)
 ```
 
 The average (across speakers) effect of context on vowel for both F1 and F2.
@@ -272,11 +206,11 @@ p_F2_sp_emp <- raleigh_data %>%
 p_F1_sp_emp + p_F2_sp_emp + plot_layout(guides='collect')
 ```
 
-## Model fitting
+## Model fitting {#Model_Fitting}
 
 We are going to fit a simple multivariate Bayesian model (similar to the "minimal" model in our Interspeech paper [@smith_modelled_2024]). For more model syntax examples (including more complex model structures, such as nested random effects, modelling variance, and predictors with nonlinear effects), see the model-fitting scripts in the Interspeech folder of the github repository.
 
-The model we are fitting jointly models F1 and F2, which is a key feature of the method we're proposing. The remainder of the model structure is quite simple. The fixed predictors are context, vowel, log duration, and all interactions. There are by-word and by-speaker random intercepts, and by-speaker random slopes of of vowel, context, and their interaction.
+The model we are fitting jointly models F1 and F2, which is a key feature of the method we're proposing. The remainder of the model structure is quite simple. The fixed predictors are `context`, `vowel`, and their interaction. There are by-`word` and by-`speaker` random intercepts, and by-`speaker` random slopes of of `vowel`, `context`, and their interaction.
 
 ```{r fit_model}
 # "p" and "q" are just dummy variables and can be anything
@@ -318,27 +252,15 @@ model <- brm(F1 + F2 +
 
 The key difference between a Bayesian model (like the one we just fit) and a frequentist model (which we could fit with very similar model syntax in `lmer`) is that the Bayesian model is modelling the *distributions* of the output variables, whereas frequentist models fit a point prediction. While I am not here to take an ideological stance, the fact that Bayesian models inherently predict distributions is extremely useful for the present application.
 
-Below, you can see all of the different parameters that were fit, and the priors that were used for each.
+## Simulate distributions {#Simulate}
 
-```{r model_summary}
-prior_summary(model)
-```
-
-## Simulate distributions
-
-The important thing to know when making predictions from a Bayesian model is that the *data* (or response variables) are modelled as random variables that are distributed according to the predictor variables and a set of *parameters*, which are themselves random variables. The process of fitting the model is the process of *finding the distributions for the parameters* (called "posterior" distributions) which best describe the data. When we are generating predictions from a fitted Bayesian model, we are essentially *drawing values of random variables*.
-
-The process of taking a draw goes like so: First, draw a value from the posterior of each parameter. Combine the drawn parameter values with the predictors of interest, and draw a value from the *posterior predictive distribution*. (or is it posterior predicted distribution?)
-
-For example, say that I want to model `y` as a linear function of `x`, and furthermore that I think `y` is distributed normally around the "best fit line" (i.e., if we were to plot each (x, y) point and then find the vertical distance of each point from the "best fit line", those distances would be normally distributed). Then the posterior predictive distribution would be defined as y_i \~ N(mu_i, sigma) (the "Gaussian" part of the model). Additionally, mu_i = alpha + beta\*x_i (the "linear" part of the model). Finally, sigma, alpha, and beta all have underlying distributions. So, to get a single y_i, you would first draw one value each from the distributions for sigma, alpha, and beta. Then you would pick a value for x_i, and calculate mu_i. Finally, you would draw a value for y_i, using the (drawn and computed) values for mu_i and sigma. Note that each draw gets one value for each parameter from their posterior distributions, but can use an arbitrary number of combinations of input predictors.
+To understand more about what exactly "drawing from the model" is doing, check out the [tidybayes help page](http://mjskay.github.io/tidybayes/articles/tidy-brms.html).
 
 Using `tidybayes`, we can simulate draws of the *parameters* (using `add_epred_draws`) or of the *data* (using `add_predicted_draws`). Which one you choose to do should be determined by the quantity you want to compute from the predictions. We'll show both in this tutorial, because the two measures of overlap that we will be calculating (Bhattacharyya affinity and Euclidean distance) necessitate different kinds of predictions.
 
-Now that we have more background on what we want to do, let's start making predictions. First, we need to know what parameter values to predict for. For our application, we at least want to get predicted values for each combination of `vowel` and `context`.
+First, we need to know what parameter values to predict for. For our application, we at least want to get predicted values for each combination of `vowel` and `context`. Because we have by-`speaker` random intercepts with `vowel`-by-`context` random slopes, we can make predictions for each `speaker`-by-`vowel`-by-`context` pair. We can also make predictions for the "average" speaker by discarding the entire random effects structure. We will do both. (All of the analysis is done for the "average" word, i.e., the by-word random intercepts are always ignored. Looking at lexical effects would open a whole new set of possible research questions, so be my guest if this is of interest.)
 
-Because we have by-`speaker` random intercepts with `vowel`-by-`context` random slopes, we can make predictions for each `speaker`-by-`vowel`-by-`context` pair. We can also make predictions for the "average" speaker by discarding the entire random effects structure. We will do both. (All of the analysis is done for the "average" word, i.e., the by-word random intercepts are always ignored. Looking at lexical effects would open a whole new set of possible research questions, so be my guest if this is of interest.)
-
-Additionally, we will also want to make by-speaker predictions, so we'll want to If we want to make predictions for an "average speaker," we want to ignore the random effects structure entirely, i.e., predict F1 and F2 as a function of just vowel and context.
+Additionally, we also want to make "average" speaker predictions, so we'll just ignore the random effects structure entirely, i.e., predict F1 and F2 as a function of just `vowel` and `context`.
 
 Let's make a dataframe with every combination of vowel and context: these are what we use to make the "average" speaker simulations. You unfortunately need to reset the factor levels, since the `levels()` function (not to be confused with the `levels` argument to the `factor()` function) makes a vector of character strings and not factors.
 
@@ -377,7 +299,7 @@ num_points=25
 
 Now, let's make our first simulations. Here, we are making by-speaker predictions for the F1 and F2 *means* as a function of context and vowel. The resulting distribution is the posterior for the *means* of the data, not the distributions for the data itself. This is what we want in order to compute Euclidean distance.
 
-When computing Euclidean distance from empirical distributions, we get the distribution center by averaging, but that isn't necessary if we are predicting from the model because we already have a distribution of the estimate for the mean from the model we fit!
+When computing Euclidean distance from empirical distributions, we get the distribution center by averaging across tokens, but that isn't necessary if we are predicting from the model because we already have a distribution of the estimate for the mean from the model we fit! We still take multiple draws of the mean, because that allows us to calculate credible intervals later on. 
 
 ```{r fitted_sp}
 fitted_sp <- sp_preds %>% 
@@ -490,6 +412,8 @@ head(predicted_av_BA)
 
 ## Empirical plots, revisited
 
+If you are not interested in the empirical plots, skip to the [discussion of uncertainty](#uncertainty).
+
 Now that we have our simulated distributions, we can compare them to the empirical distributions. This is a good sanity check and may also reveal how the model "helps us."
 
 We'll start by plotting the modelled distributions next to the empirical distributions (repeated from above).
@@ -506,10 +430,10 @@ p_dist_modelled <- fitted_sp %>%
                level=0.66, show.legend=FALSE) +
   geom_line(aes(group=interaction(context, speaker)), show.legend=FALSE) +
   scale_x_reverse() + scale_y_reverse() +
-  xlim(2, -2) + ylim(2, -2) +
-  coord_fixed() +
+  coord_cartesian(xlim=c(2, -2), ylim=c(2, -2), clip='off') +
   labs(title='modelled') +
-  facet_wrap(~speaker, ncol=2)
+  facet_wrap(~speaker, ncol=2) +
+  theme(aspect.ratio=1)
 
 p_dist_empirical <- raleigh_data %>%
   group_by(speaker, vowel, context) %>% 
@@ -522,16 +446,16 @@ p_dist_empirical <- raleigh_data %>%
                level=0.66) +
   geom_line(aes(group=interaction(context, speaker))) +
   scale_x_reverse() + scale_y_reverse() +
-  xlim(2, -2) + ylim(2, -2) +
-  coord_fixed() +
+  coord_cartesian(xlim=c(2, -2), ylim=c(2, -2), clip='off') +
   facet_wrap(~speaker, ncol=2) +
   labs(title='empirical') +
-  theme(axis.title.y=element_blank())
+  theme(axis.title.y=element_blank(),
+        aspect.ratio=1)
 
 p_dist_modelled + p_dist_empirical
 ```
 
-Notice that all of the ellipses in the modelled distributions have roughly the same size and orientation: this is because, with the way the model that fit them is defined, we have fit a single variance-covariance matrix. If we want variability to be allowed to vary across speakers, contexts, and vowels (which we probably do), we have to model variance too. An example of how to do this is in the **xxx script** in the Interspeech2024 folder.
+Notice that all of the ellipses in the modelled distributions have roughly the same size and orientation: this is because, with the way the model that fit them is defined, we have fit a single variance-covariance matrix. If we want variability to be allowed to vary across speakers, contexts, and vowels (which we probably do), we have to model variance too. An example of how to do this is in the scripts ending in "_exp" in the Interspeech2024/model_fitting folder.
 
 We can also plot the by-speaker interactions, like we did for the empirical data:
 
@@ -586,6 +510,7 @@ p_F2_interaction_empirical <- raleigh_data %>%
 (p_F1_interaction_modelled + p_F1_interaction_empirical) /
   (p_F2_interaction_modelled + p_F2_interaction_empirical)
 ```
+### Uncertainty {#uncertainty}
 
 Now, we'll make some plots that we couldn't make from the empirical data: plots showing uncertainty!
 
@@ -622,9 +547,9 @@ fitted_sp %>%
   
 ```
 
-The good thing about this way of viewing uncertainty is that it demonstrates that the variability is actually *less* than what just the errorbars show, i.e., the draws vary mostly in their intercepts, not their slopes.
+The good thing about this way of viewing uncertainty is that it demonstrates that the variability is actually *less* than what just the errorbars show, i.e., the draws as plotted here vary mostly in their intercepts, not their slopes.
 
-## Overlap calculations
+## Overlap calculations {#Calculate_Overlap}
 
 Now that we have predicted and fitted dataframes that "look like" the raw data, we can calculate any measure of overlap we like.
 
@@ -803,55 +728,67 @@ p_ED_emp <- ED_emp_sp_wide %>%
   (p_ED_mod + p_ED_emp) + # I want to collect the axes, but the command isn't working; see this patchwork issue: https://github.com/thomasp85/patchwork/issues/366
   plot_layout(guides='collect')
 ```
+We can also make plots showing confidence intervals for each speaker. 
 
+Bhattacharyya affinity:
 ```{r}
 p_BA_oral <- BA_mod_sp_wide %>%
-  ggplot(aes(x=reorder(speaker, nasal), y=oral, color=speaker)) +
+  ggplot(aes(x=reorder(speaker, oral), y=oral, color=speaker)) +
   geom_point() +
-  geom_linerange(aes(ymin=oral.lower, ymax=oral.upper))
+  geom_linerange(aes(ymin=oral.lower, ymax=oral.upper)) +
+  theme(axis.title.x=element_blank())
 
 p_BA_nasal <- BA_mod_sp_wide %>%
   ggplot(aes(x=reorder(speaker, nasal), y=nasal, color=speaker)) +
   geom_point() +
-  geom_linerange(aes(ymin=nasal.lower, ymax=nasal.upper))
+  geom_linerange(aes(ymin=nasal.lower, ymax=nasal.upper)) +
+  theme(axis.title.x=element_blank())
 
 p_BA_diff <- BA_mod_sp_wide %>%
-  ggplot(aes(x=reorder(speaker, nasal), y=diff, color=speaker)) +
+  ggplot(aes(x=reorder(speaker, diff), y=diff, color=speaker)) +
   geom_point() +
-  geom_linerange(aes(ymin=diff.lower, ymax=diff.upper))
+  geom_linerange(aes(ymin=diff.lower, ymax=diff.upper)) +
+  xlab('speaker')
 
 p_BA_oral /
   p_BA_nasal /
   p_BA_diff +
   plot_layout(guides='collect')
 ```
-
+And Euclidean distance: 
 ```{r}
 p_ED_oral <- ED_mod_sp_wide %>%
-  ggplot(aes(x=reorder(speaker, -nasal), y=oral)) +
+  ggplot(aes(x=reorder(speaker, -oral), y=oral, color=speaker)) +
   geom_point() +
-  geom_linerange(aes(ymin=oral.lower, ymax=oral.upper))
+  geom_linerange(aes(ymin=oral.lower, ymax=oral.upper)) +
+  theme(axis.title.x=element_blank())
 
 p_ED_nasal <- ED_mod_sp_wide %>%
-  ggplot(aes(x=reorder(speaker, -nasal), y=nasal)) +
+  ggplot(aes(x=reorder(speaker, -nasal), y=nasal, color=speaker)) +
   geom_point() +
-  geom_linerange(aes(ymin=nasal.lower, ymax=nasal.upper))
+  geom_linerange(aes(ymin=nasal.lower, ymax=nasal.upper)) +
+  theme(axis.title.x=element_blank())
 
 p_ED_diff <- ED_mod_sp_wide %>%
-  ggplot(aes(x=reorder(speaker, -nasal), y=diff)) +
+  ggplot(aes(x=reorder(speaker, -diff), y=diff, color=speaker)) +
   geom_point() +
-  geom_linerange(aes(ymin=diff.lower, ymax=diff.upper))
+  geom_linerange(aes(ymin=diff.lower, ymax=diff.upper)) +
+  xlab('speaker')
 
 p_ED_oral /
   p_ED_nasal /
-  p_ED_diff
+  p_ED_diff +
+  plot_layout(guides='collect')
 ```
 
-```{r, echo=FALSE}
-# palmerpenguins::penguins %>%
-#   ggplot(aes(flipper_length_mm, body_mass_g, color = species))+
-#     geom_point()+
-#     scale_color_bright()+
-#     theme_minimal()+
-#     theme(text = element_text(family = "atkinson"))
-```
+## Summary
+In this tutorial, you have learned the tools to calculate vowel overlap from modelled distributions. Specifically, you have learned:
+
+* How to [fit a multivariate Bayesian model](#Model_Fitting)
+* How to [simulate a distribution](#Simulate) from the fitted model
+  - You should also have the tools to decide what kinds of simulations your analysis calls for
+* How to [calculate uncertainty](#uncertainty) in the posteriors and in quantities computed from posteriors
+* How to [calculate measures of overlap](#Calculate_Overlap) from the simulated distributions
+  - We showed the process for two example measures: Euclidean distance and Bhattacharyya affinity
+  
+Finally, while the example application here is vowel merger, we invite you to follow this method on any type of analysis where you find it useful.
