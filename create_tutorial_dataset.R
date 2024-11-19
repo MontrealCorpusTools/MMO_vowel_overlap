@@ -68,3 +68,4 @@ raleigh_data <- raleigh_data_norm %>%
 
 # Save the dataset
 raleigh_data %>% saveRDS("data/Raleigh_subset.rds")
+raleigh_data %>% write_csv("data/Raleigh_subset.csv")
