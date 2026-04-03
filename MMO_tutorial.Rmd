@@ -8,8 +8,8 @@ author:
 date: 2024-9-1
 bibliography: bibliography.bib
 format: 
-  html: default
-  pdf: default
+  html: 
+    embed-resources: true
 editor: source
 knitr: 
   opts_chunk: 
